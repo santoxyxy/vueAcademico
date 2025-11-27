@@ -1,0 +1,54 @@
+# Backend exclusions
+# Nunca versionar el JDK
+# JDKs y binarios grandes
+Oracle_JDK-*/
+jdk*/
+*/lib/modules
+*.zip
+*.tar.gz
+*.iso
+
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**
+!**/src/test/**
+!**/src/main/java/taller1/grupo/vueadmin/logs
+### IDE and build tool exclusions ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+.DS_Store
+.idea
+*.iws
+*.iml
+*.ipr
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+### VS Code ###
+.vscode/
+
+### Frontend exclusions ###
+node_modules
+dist_electron
+/dist
+.DS_Store
+
+# Local env files
+.env.local
+.env.*.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
