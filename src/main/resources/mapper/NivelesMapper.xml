@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.NivelesMapper">
+    
+    <!-- Mapeo de resultados -->
+    <resultMap id="nivelesResult" type="taller1.grupo.vueadmin.system.entity.dto.NivelesDto">
+        <result column="codn" property="codn" jdbcType="INTEGER"/>
+        <result column="nombre" property="nombre" jdbcType="VARCHAR"/>
+        <result column="estado" property="estado" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- Consulta paginada con filtro -->
+    <select id="queryNivelesTable" resultMap="nivelesResult">
+        SELECT 
+            codn,
+            nombre,
+            estado
+        FROM academico.niveles
+        <where>
+            <if test="blurry != null and blurry != ''">
+                AND nombre ILIKE CONCAT('%', #{blurry}, '%')
+            </if>
+        </where>
+        ORDER BY codn ASC
+    </select>
+
+</mapper>
