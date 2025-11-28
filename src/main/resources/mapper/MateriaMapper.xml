@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.MateriaMapper">
+    
+    <!-- Mapeo de resultados con JOIN -->
+    <resultMap id="materiaResult" type="taller1.grupo.vueadmin.system.entity.dto.MateriaDto">
+        <result column="codmat" property="codmat" jdbcType="VARCHAR"/>
+        <result column="nombre" property="nombre" jdbcType="VARCHAR"/>
+        <result column="codn" property="codn" jdbcType="INTEGER"/>
+        <result column="nombreNivel" property="nombreNivel" jdbcType="VARCHAR"/>
+        <result column="estado" property="estado" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- Consulta paginada con JOIN a niveles -->
+    <select id="queryMateriaTable" resultMap="materiaResult">
+        SELECT 
+            m.codmat,
+            m.nombre,
+            m.codn,
+            n.nombre AS nombreNivel,
+            m.estado
+        FROM academico.materia m
+        LEFT JOIN academico.niveles n ON m.codn = n.codn
+        <where>
+            <if test="blurry != null and blurry != ''">
+                AND (
+                    m.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR m.codmat ILIKE CONCAT('%', #{blurry}, '%')
+                )
+            </if>
+        </where>
+        ORDER BY m.codmat ASC
+    </select>
+
+    <!-- Obtener materia individual con nivel -->
+    <select id="getMateriaWithNivel" resultMap="materiaResult">
+        SELECT 
+            m.codmat,
+            m.nombre,
+            m.codn,
+            n.nombre AS nombreNivel,
+            m.estado
+        FROM academico.materia m
+        LEFT JOIN academico.niveles n ON m.codn = n.codn
+        WHERE m.codmat = #{codmat}
+    </select>
+
+</mapper>

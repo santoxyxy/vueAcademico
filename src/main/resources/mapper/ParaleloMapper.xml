@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.ParaleloMapper">
+    
+    <!-- Mapeo de resultados -->
+    <resultMap id="paraleloResult" type="taller1.grupo.vueadmin.system.entity.dto.ParaleloDto">
+        <result column="codp" property="codp" jdbcType="INTEGER"/>
+        <result column="nombre" property="nombre" jdbcType="VARCHAR"/>
+        <result column="estado" property="estado" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- Consulta paginada con filtro -->
+    <select id="queryParaleloTable" resultMap="paraleloResult">
+        SELECT 
+            codp,
+            nombre,
+            estado
+        FROM academico.paralelo
+        <where>
+            <if test="blurry != null and blurry != ''">
+                AND nombre ILIKE CONCAT('%', #{blurry}, '%')
+            </if>
+        </where>
+        ORDER BY codp ASC
+    </select>
+
+</mapper>
