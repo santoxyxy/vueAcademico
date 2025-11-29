@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.DictaMapper">
+    
+    <!-- Mapeo de resultados con JOINs -->
+    <resultMap id="dictaResult" type="taller1.grupo.vueadmin.system.entity.dto.DictaDto">
+        <result column="codpar" property="codpar" jdbcType="INTEGER"/>
+        <result column="codp" property="codp" jdbcType="INTEGER"/>
+        <result column="codmat" property="codmat" jdbcType="VARCHAR"/>
+        <result column="gestion" property="gestion" jdbcType="INTEGER"/>
+        <result column="ids" property="ids" jdbcType="INTEGER"/>
+        <result column="nombreMateria" property="nombreMateria" jdbcType="VARCHAR"/>
+        <result column="nombreParalelo" property="nombreParalelo" jdbcType="VARCHAR"/>
+        <result column="nombreDocente" property="nombreDocente" jdbcType="VARCHAR"/>
+        <result column="emailDocente" property="emailDocente" jdbcType="VARCHAR"/>
+        <result column="tipoDocente" property="tipoDocente" jdbcType="VARCHAR"/>
+        <result column="codn" property="codn" jdbcType="INTEGER"/>
+        <result column="nombreNivel" property="nombreNivel" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- Consulta paginada con filtros -->
+    <select id="queryDictaTable" resultMap="dictaResult">
+        SELECT 
+            d.codpar,
+            d.codp,
+            d.codmat,
+            d.gestion,
+            d.ids,
+            mt.nombre AS nombreMateria,
+            p.nombre AS nombreParalelo,
+            CONCAT(per.nombre, ' ', per.ap, ' ', COALESCE(per.am, '')) AS nombreDocente,
+            u.email AS emailDocente,
+            per.tipo AS tipoDocente,
+            mt.codn,
+            n.nombre AS nombreNivel
+        FROM academico.dicta d
+        INNER JOIN academico.materia mt ON d.codmat = mt.codmat
+        INNER JOIN academico.paralelo p ON d.codpar = p.codp
+        INNER JOIN public.sys_user u ON d.ids = u.id
+        INNER JOIN academico.personal per ON d.ids = per.idusuario
+        LEFT JOIN academico.niveles n ON mt.codn = n.codn
+        <where>
+            <if test="gestion != null">
+                AND d.gestion = #{gestion}
+            </if>
+            <if test="codmat != null and codmat != ''">
+                AND d.codmat = #{codmat}
+            </if>
+            <if test="codn != null">
+                AND mt.codn = #{codn}
+            </if>
+            <if test="blurry != null and blurry != ''">
+                AND (
+                    mt.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR p.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR per.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR per.ap ILIKE CONCAT('%', #{blurry}, '%')
+                    OR per.am ILIKE CONCAT('%', #{blurry}, '%')
+                    OR mt.codmat ILIKE CONCAT('%', #{blurry}, '%')
+                )
+            </if>
+        </where>
+        ORDER BY mt.nombre ASC, p.nombre ASC
+    </select>
+
+    <!-- Obtener asignación específica -->
+    <select id="getDictaByKeys" resultMap="dictaResult">
+        SELECT 
+            d.codpar,
+            d.codp,
+            d.codmat,
+            d.gestion,
+            d.ids,
+            mt.nombre AS nombreMateria,
+            p.nombre AS nombreParalelo,
+            CONCAT(per.nombre, ' ', per.ap, ' ', COALESCE(per.am, '')) AS nombreDocente,
+            u.email AS emailDocente,
+            per.tipo AS tipoDocente
+        FROM academico.dicta d
+        INNER JOIN academico.materia mt ON d.codmat = mt.codmat
+        INNER JOIN academico.paralelo p ON d.codpar = p.codp
+        INNER JOIN public.sys_user u ON d.ids = u.id
+        INNER JOIN academico.personal per ON d.ids = per.idusuario
+        WHERE d.codpar = #{codpar}
+          AND d.codp = #{codp}
+          AND d.codmat = #{codmat}
+          AND d.gestion = #{gestion}
+    </select>
+
+    <!-- Materias que dicta un docente -->
+    <select id="getMateriasByDocente" resultMap="dictaResult">
+        SELECT 
+            d.codpar,
+            d.codp,
+            d.codmat,
+            d.gestion,
+            d.ids,
+            mt.nombre AS nombreMateria,
+            p.nombre AS nombreParalelo,
+            mt.codn,
+            n.nombre AS nombreNivel
+        FROM academico.dicta d
+        INNER JOIN academico.materia mt ON d.codmat = mt.codmat
+        INNER JOIN academico.paralelo p ON d.codpar = p.codp
+        LEFT JOIN academico.niveles n ON mt.codn = n.codn
+        WHERE d.ids = #{ids}
+          AND d.gestion = #{gestion}
+        ORDER BY mt.nombre ASC, p.nombre ASC
+    </select>
+
+    <!-- Docentes que dictan una materia -->
+    <select id="getDocentesByMateria" resultMap="dictaResult">
+        SELECT 
+            d.codpar,
+            d.codp,
+            d.codmat,
+            d.gestion,
+            d.ids,
+            p.nombre AS nombreParalelo,
+            CONCAT(per.nombre, ' ', per.ap, ' ', COALESCE(per.am, '')) AS nombreDocente,
+            u.email AS emailDocente,
+            per.tipo AS tipoDocente
+        FROM academico.dicta d
+        INNER JOIN academico.paralelo p ON d.codpar = p.codp
+        INNER JOIN public.sys_user u ON d.ids = u.id
+        INNER JOIN academico.personal per ON d.ids = per.idusuario
+        WHERE d.codmat = #{codmat}
+          AND d.gestion = #{gestion}
+        ORDER BY p.nombre ASC
+    </select>
+
+    <!-- Contar asignaciones existentes -->
+    <select id="countAsignaciones" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM academico.dicta
+        WHERE codmat = #{codmat}
+          AND codpar = #{codpar}
+          AND gestion = #{gestion}
+    </select>
+
+</mapper>
