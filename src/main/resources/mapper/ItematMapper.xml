@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.ItematMapper">
+    
+    <!-- Mapeo de resultados con JOINs -->
+    <resultMap id="itematResult" type="taller1.grupo.vueadmin.system.entity.dto.ItematDto">
+        <result column="codmat" property="codmat" jdbcType="VARCHAR"/>
+        <result column="nombreMateria" property="nombreMateria" jdbcType="VARCHAR"/>
+        <result column="codi" property="codi" jdbcType="INTEGER"/>
+        <result column="nombreItem" property="nombreItem" jdbcType="VARCHAR"/>
+        <result column="gestion" property="gestion" jdbcType="INTEGER"/>
+        <result column="ponderacion" property="ponderacion" jdbcType="INTEGER"/>
+        <result column="estado" property="estado" jdbcType="INTEGER"/>
+        <result column="codn" property="codn" jdbcType="INTEGER"/>
+        <result column="nombreNivel" property="nombreNivel" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- Consulta paginada con filtros -->
+    <select id="queryItematTable" resultMap="itematResult">
+        SELECT 
+            it.codmat,
+            mt.nombre AS nombreMateria,
+            it.codi,
+            i.nombre AS nombreItem,
+            it.gestion,
+            it.ponderacion,
+            it.estado,
+            mt.codn,
+            n.nombre AS nombreNivel
+        FROM academico.itemat it
+        INNER JOIN academico.materia mt ON it.codmat = mt.codmat
+        INNER JOIN academico.items i ON it.codi = i.codi
+        LEFT JOIN academico.niveles n ON mt.codn = n.codn
+        <where>
+            <if test="gestion != null">
+                AND it.gestion = #{gestion}
+            </if>
+            <if test="codmat != null and codmat != ''">
+                AND it.codmat = #{codmat}
+            </if>
+            <if test="blurry != null and blurry != ''">
+                AND (
+                    mt.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR i.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR mt.codmat ILIKE CONCAT('%', #{blurry}, '%')
+                )
+            </if>
+        </where>
+        ORDER BY mt.nombre ASC, i.nombre ASC
+    </select>
+
+    <!-- Obtener ítems de una materia en una gestión -->
+    <select id="getItemsByMateria" resultMap="itematResult">
+        SELECT 
+            it.codmat,
+            mt.nombre AS nombreMateria,
+            it.codi,
+            i.nombre AS nombreItem,
+            it.gestion,
+            it.ponderacion,
+            it.estado
+        FROM academico.itemat it
+        INNER JOIN academico.materia mt ON it.codmat = mt.codmat
+        INNER JOIN academico.items i ON it.codi = i.codi
+        WHERE it.codmat = #{codmat}
+          AND it.gestion = #{gestion}
+        ORDER BY i.nombre ASC
+    </select>
+
+    <!-- Verificar existencia por PK compuesta -->
+    <select id="getItematByKeys" resultMap="itematResult">
+        SELECT 
+            it.codmat,
+            mt.nombre AS nombreMateria,
+            it.codi,
+            i.nombre AS nombreItem,
+            it.gestion,
+            it.ponderacion,
+            it.estado
+        FROM academico.itemat it
+        INNER JOIN academico.materia mt ON it.codmat = mt.codmat
+        INNER JOIN academico.items i ON it.codi = i.codi
+        WHERE it.codmat = #{codmat}
+          AND it.codi = #{codi}
+          AND it.gestion = #{gestion}
+    </select>
+
+    <!-- Suma total de ponderaciones -->
+    <select id="getSumPonderaciones" resultType="java.lang.Integer">
+        SELECT COALESCE(SUM(ponderacion), 0)
+        FROM academico.itemat
+        WHERE codmat = #{codmat}
+          AND gestion = #{gestion}
+          AND estado = 1
+    </select>
+
+    <!-- Suma parcial excluyendo un ítem -->
+    <select id="getSumPonderacionesExcluding" resultType="java.lang.Integer">
+        SELECT COALESCE(SUM(ponderacion), 0)
+        FROM academico.itemat
+        WHERE codmat = #{codmat}
+          AND gestion = #{gestion}
+          AND codi != #{excludeCodi}
+          AND estado = 1
+    </select>
+
+</mapper>

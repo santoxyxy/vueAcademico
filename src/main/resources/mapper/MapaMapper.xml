@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.MapaMapper">
+    
+    <!-- Mapeo de resultados con JOINs -->
+    <resultMap id="mapaResult" type="taller1.grupo.vueadmin.system.entity.dto.MapaDto">
+        <result column="codmat" property="codmat" jdbcType="VARCHAR"/>
+        <result column="nombreMateria" property="nombreMateria" jdbcType="VARCHAR"/>
+        <result column="codpar" property="codpar" jdbcType="INTEGER"/>
+        <result column="nombreParalelo" property="nombreParalelo" jdbcType="VARCHAR"/>
+        <result column="gestion" property="gestion" jdbcType="INTEGER"/>
+        <result column="estado" property="estado" jdbcType="INTEGER"/>
+        <result column="codn" property="codn" jdbcType="INTEGER"/>
+        <result column="nombreNivel" property="nombreNivel" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- Consulta paginada con filtros -->
+    <select id="queryMapaTable" resultMap="mapaResult">
+        SELECT 
+            mp.codmat,
+            mt.nombre AS nombreMateria,
+            mp.codpar,
+            p.nombre AS nombreParalelo,
+            mp.gestion,
+            mp.estado,
+            mt.codn,
+            n.nombre AS nombreNivel
+        FROM academico.mapa mp
+        INNER JOIN academico.materia mt ON mp.codmat = mt.codmat
+        INNER JOIN academico.paralelo p ON mp.codpar = p.codp
+        LEFT JOIN academico.niveles n ON mt.codn = n.codn
+        <where>
+            <if test="gestion != null">
+                AND mp.gestion = #{gestion}
+            </if>
+            <if test="blurry != null and blurry != ''">
+                AND (
+                    mt.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR p.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR mt.codmat ILIKE CONCAT('%', #{blurry}, '%')
+                )
+            </if>
+        </where>
+        ORDER BY mt.nombre ASC, p.nombre ASC
+    </select>
+
+    <!-- Obtener paralelos de una materia en una gestión -->
+    <select id="getParalelosByMateria" resultMap="mapaResult">
+        SELECT 
+            mp.codmat,
+            mt.nombre AS nombreMateria,
+            mp.codpar,
+            p.nombre AS nombreParalelo,
+            mp.gestion,
+            mp.estado
+        FROM academico.mapa mp
+        INNER JOIN academico.materia mt ON mp.codmat = mt.codmat
+        INNER JOIN academico.paralelo p ON mp.codpar = p.codp
+        WHERE mp.codmat = #{codmat}
+          AND mp.gestion = #{gestion}
+        ORDER BY p.nombre ASC
+    </select>
+
+    <!-- Verificar existencia por PK compuesta -->
+    <select id="getMapaByKeys" resultMap="mapaResult">
+        SELECT 
+            mp.codmat,
+            mt.nombre AS nombreMateria,
+            mp.codpar,
+            p.nombre AS nombreParalelo,
+            mp.gestion,
+            mp.estado
+        FROM academico.mapa mp
+        INNER JOIN academico.materia mt ON mp.codmat = mt.codmat
+        INNER JOIN academico.paralelo p ON mp.codpar = p.codp
+        WHERE mp.codmat = #{codmat}
+          AND mp.codpar = #{codpar}
+          AND mp.gestion = #{gestion}
+    </select>
+
+</mapper>
