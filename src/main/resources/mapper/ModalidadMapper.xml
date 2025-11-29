@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.ModalidadMapper">
+    
+    <!-- Mapeo de resultados -->
+    <resultMap id="modalidadResult" type="taller1.grupo.vueadmin.system.entity.dto.ModalidadDto">
+        <result column="codm" property="codm" jdbcType="INTEGER"/>
+        <result column="nombre" property="nombre" jdbcType="VARCHAR"/>
+        <result column="estado" property="estado" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- Consulta paginada con filtro -->
+    <select id="queryModalidadTable" resultMap="modalidadResult">
+        SELECT 
+            codm,
+            nombre,
+            estado
+        FROM academico.modalidad
+        <where>
+            <if test="blurry != null and blurry != ''">
+                AND nombre ILIKE CONCAT('%', #{blurry}, '%')
+            </if>
+        </where>
+        ORDER BY codm ASC
+    </select>
+
+</mapper>
