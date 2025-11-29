@@ -38,5 +38,5 @@ public interface ParaleloService {
      * Eliminar paralelo
      * @param id ID del paralelo
      */
-    void delParalelo(Integer id);
+    void delParalelo(Long id);
 }

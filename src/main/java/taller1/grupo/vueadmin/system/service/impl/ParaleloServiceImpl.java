@@ -86,7 +86,7 @@ public class ParaleloServiceImpl implements ParaleloService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void delParalelo(Integer id) {
+    public void delParalelo(Long id) {
         Paralelo paralelo = paraleloMapper.selectById(id);
         if (paralelo == null) {
             throw new BadRequestException("El paralelo no existe");

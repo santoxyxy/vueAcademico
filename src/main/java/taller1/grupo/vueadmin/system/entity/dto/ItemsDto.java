@@ -4,16 +4,16 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * DTO para transferencia de datos de Paralelos
+ * DTO para transferencia de datos de Items
  * Usado en formularios y respuestas de API
  * @author Tu nombre
  * @date 2025-01-01
  */
 @Setter
 @Getter
-public class ParaleloDto {
+public class ItemsDto {
 
-    private Long codp;
+    private Integer codi;
 
     private String nombre;
 

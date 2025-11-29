@@ -11,7 +11,7 @@ import lombok.Setter;
 import taller1.grupo.vueadmin.common.utils.BaseEntity;
 
 /**
- * Entidad Paralelo - Representa las secciones (A, B, C) de las materias
+ * Entidad Items - Representa los ítems de evaluación (Parcial, Proyecto, Final, etc.)
  * @author Tu nombre
  * @date 2025-01-01
  */
@@ -19,11 +19,11 @@ import taller1.grupo.vueadmin.common.utils.BaseEntity;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName(value = "paralelo", schema = "academico")
-public class Paralelo extends BaseEntity {
+@TableName(value = "items", schema = "academico")
+public class Items extends BaseEntity {
 
-    @TableId(value = "codp", type = IdType.AUTO)
-    private Long codp;
+    @TableId(value = "codi", type = IdType.AUTO)
+    private Integer codi;
 
     @TableField("nombre")
     private String nombre;

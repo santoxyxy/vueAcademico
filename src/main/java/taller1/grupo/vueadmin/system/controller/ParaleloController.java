@@ -77,7 +77,7 @@ public class ParaleloController extends ResultUtil {
     @Log("Eliminar paralelo")
     @DeleteMapping("/paralelo/del")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Object> delParalelo(Integer id) {
+    public ResponseEntity<Object> delParalelo(Long id) {
         try {
             paraleloService.delParalelo(id);
             return success(true, "Eliminar exitosamente");
