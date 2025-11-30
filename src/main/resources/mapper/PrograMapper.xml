@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.PrograMapper">
+    
+    <!-- Mapeo de resultados con JOINs -->
+    <resultMap id="prograResult" type="taller1.grupo.vueadmin.system.entity.dto.PrograDto">
+        <result column="codpar" property="codpar" jdbcType="INTEGER"/>
+        <result column="codp" property="codp" jdbcType="INTEGER"/>
+        <result column="codmat" property="codmat" jdbcType="VARCHAR"/>
+        <result column="gestion" property="gestion" jdbcType="INTEGER"/>
+        <result column="ids" property="ids" jdbcType="INTEGER"/>
+        <result column="nombreMateria" property="nombreMateria" jdbcType="VARCHAR"/>
+        <result column="nombreParalelo" property="nombreParalelo" jdbcType="VARCHAR"/>
+        <result column="nombreDocente" property="nombreDocente" jdbcType="VARCHAR"/>
+        <result column="emailDocente" property="emailDocente" jdbcType="VARCHAR"/>
+        <result column="tipoDocente" property="tipoDocente" jdbcType="VARCHAR"/>
+        <result column="codn" property="codn" jdbcType="INTEGER"/>
+        <result column="nombreNivel" property="nombreNivel" jdbcType="VARCHAR"/>
+        <result column="cantidadEstudiantes" property="cantidadEstudiantes" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- Consulta paginada con filtros -->
+    <select id="queryPrograTable" resultMap="prograResult">
+        SELECT 
+            pr.codpar,
+            pr.codp,
+            pr.codmat,
+            pr.gestion,
+            pr.ids,
+            mt.nombre AS nombreMateria,
+            p.nombre AS nombreParalelo,
+            CONCAT(per.nombre, ' ', per.ap, ' ', COALESCE(per.am, '')) AS nombreDocente,
+            u.email AS emailDocente,
+            per.tipo AS tipoDocente,
+            mt.codn,
+            n.nombre AS nombreNivel,
+            COUNT(DISTINCT nt.idusuario) AS cantidadEstudiantes
+        FROM academico.progra pr
+        INNER JOIN academico.materia mt ON pr.codmat = mt.codmat
+        INNER JOIN academico.paralelo p ON pr.codpar = p.codp
+        INNER JOIN public.sys_user u ON pr.ids = u.id
+        INNER JOIN academico.personal per ON pr.ids = per.idusuario
+        LEFT JOIN academico.niveles n ON mt.codn = n.codn
+        LEFT JOIN academico.notas nt ON pr.codmat = nt.codmat 
+            AND pr.codpar = nt.coda 
+            AND pr.codp = nt.codp 
+            AND pr.gestion = nt.gestion
+        <where>
+            <if test="gestion != null">
+                AND pr.gestion = #{gestion}
+            </if>
+            <if test="codmat != null and codmat != ''">
+                AND pr.codmat = #{codmat}
+            </if>
+            <if test="codn != null">
+                AND mt.codn = #{codn}
+            </if>
+            <if test="blurry != null and blurry != ''">
+                AND (
+                    mt.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR p.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR per.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR per.ap ILIKE CONCAT('%', #{blurry}, '%')
+                    OR per.am ILIKE CONCAT('%', #{blurry}, '%')
+                    OR mt.codmat ILIKE CONCAT('%', #{blurry}, '%')
+                )
+            </if>
+        </where>
+        GROUP BY pr.codpar, pr.codp, pr.codmat, pr.gestion, pr.ids,
+                 mt.nombre, p.nombre, per.nombre, per.ap, per.am,
+                 u.email, per.tipo, mt.codn, n.nombre
+        ORDER BY mt.nombre ASC, p.nombre ASC
+    </select>
+
+    <!-- Obtener clase específica -->
+    <select id="getPrograByKeys" resultMap="prograResult">
+        SELECT 
+            pr.codpar,
+            pr.codp,
+            pr.codmat,
+            pr.gestion,
+            pr.ids,
+            mt.nombre AS nombreMateria,
+            p.nombre AS nombreParalelo,
+            CONCAT(per.nombre, ' ', per.ap, ' ', COALESCE(per.am, '')) AS nombreDocente,
+            u.email AS emailDocente,
+            per.tipo AS tipoDocente,
+            mt.codn,
+            n.nombre AS nombreNivel
+        FROM academico.progra pr
+        INNER JOIN academico.materia mt ON pr.codmat = mt.codmat
+        INNER JOIN academico.paralelo p ON pr.codpar = p.codp
+        INNER JOIN public.sys_user u ON pr.ids = u.id
+        INNER JOIN academico.personal per ON pr.ids = per.idusuario
+        LEFT JOIN academico.niveles n ON mt.codn = n.codn
+        WHERE pr.codpar = #{codpar}
+          AND pr.codp = #{codp}
+          AND pr.codmat = #{codmat}
+          AND pr.gestion = #{gestion}
+    </select>
+
+    <!-- Clases que dicta un docente -->
+    <select id="getClasesByDocente" resultMap="prograResult">
+        SELECT 
+            pr.codpar,
+            pr.codp,
+            pr.codmat,
+            pr.gestion,
+            pr.ids,
+            mt.nombre AS nombreMateria,
+            p.nombre AS nombreParalelo,
+            mt.codn,
+            n.nombre AS nombreNivel,
+            COUNT(DISTINCT nt.idusuario) AS cantidadEstudiantes
+        FROM academico.progra pr
+        INNER JOIN academico.materia mt ON pr.codmat = mt.codmat
+        INNER JOIN academico.paralelo p ON pr.codpar = p.codp
+        LEFT JOIN academico.niveles n ON mt.codn = n.codn
+        LEFT JOIN academico.notas nt ON pr.codmat = nt.codmat 
+            AND pr.codpar = nt.coda 
+            AND pr.codp = nt.codp 
+            AND pr.gestion = nt.gestion
+        WHERE pr.ids = #{ids}
+          AND pr.gestion = #{gestion}
+        GROUP BY pr.codpar, pr.codp, pr.codmat, pr.gestion, pr.ids,
+                 mt.nombre, p.nombre, mt.codn, n.nombre
+        ORDER BY mt.nombre ASC, p.nombre ASC
+    </select>
+
+    <!-- Paralelos ofertados de una materia -->
+    <select id="getParalelosByMateria" resultMap="prograResult">
+        SELECT 
+            pr.codpar,
+            pr.codp,
+            pr.codmat,
+            pr.gestion,
+            pr.ids,
+            p.nombre AS nombreParalelo,
+            CONCAT(per.nombre, ' ', per.ap, ' ', COALESCE(per.am, '')) AS nombreDocente
+        FROM academico.progra pr
+        INNER JOIN academico.paralelo p ON pr.codpar = p.codp
+        INNER JOIN academico.personal per ON pr.ids = per.idusuario
+        WHERE pr.codmat = #{codmat}
+          AND pr.gestion = #{gestion}
+        ORDER BY p.nombre ASC
+    </select>
+
+    <!-- Contar clases existentes -->
+    <select id="countClasesExistentes" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM academico.progra
+        WHERE codmat = #{codmat}
+          AND codpar = #{codpar}
+          AND gestion = #{gestion}
+    </select>
+
+</mapper>
