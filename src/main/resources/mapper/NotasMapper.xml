@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.NotasMapper">
+    
+    <!-- Mapeo de resultados con JOINs -->
+    <resultMap id="notasResult" type="taller1.grupo.vueadmin.system.entity.dto.NotasDto">
+        <result column="codmat" property="codmat" jdbcType="VARCHAR"/>
+        <result column="codi" property="codi" jdbcType="INTEGER"/>
+        <result column="coda" property="coda" jdbcType="INTEGER"/>
+        <result column="codp" property="codp" jdbcType="INTEGER"/>
+        <result column="gestion" property="gestion" jdbcType="INTEGER"/>
+        <result column="idusuario" property="idusuario" jdbcType="INTEGER"/>
+        <result column="nota" property="nota" jdbcType="INTEGER"/>
+        <result column="coddm" property="coddm" jdbcType="INTEGER"/>
+        <result column="nombreMateria" property="nombreMateria" jdbcType="VARCHAR"/>
+        <result column="nombreItem" property="nombreItem" jdbcType="VARCHAR"/>
+        <result column="nombreParalelo" property="nombreParalelo" jdbcType="VARCHAR"/>
+        <result column="nombreEstudiante" property="nombreEstudiante" jdbcType="VARCHAR"/>
+        <result column="emailEstudiante" property="emailEstudiante" jdbcType="VARCHAR"/>
+        <result column="nombreModalidad" property="nombreModalidad" jdbcType="VARCHAR"/>
+        <result column="ponderacion" property="ponderacion" jdbcType="INTEGER"/>
+        <result column="codn" property="codn" jdbcType="INTEGER"/>
+        <result column="nombreNivel" property="nombreNivel" jdbcType="VARCHAR"/>
+        <result column="notaPonderada" property="notaPonderada" jdbcType="DOUBLE"/>
+    </resultMap>
+
+    <!-- Consulta paginada con filtros -->
+    <select id="queryNotasTable" resultMap="notasResult">
+        SELECT 
+            n.codmat,
+            n.codi,
+            n.coda,
+            n.codp,
+            n.gestion,
+            n.idusuario,
+            n.nota,
+            n.coddm,
+            mt.nombre AS nombreMateria,
+            i.nombre AS nombreItem,
+            p.nombre AS nombreParalelo,
+            CONCAT(per.nombre, ' ', per.ap, ' ', COALESCE(per.am, '')) AS nombreEstudiante,
+            u.email AS emailEstudiante,
+            dm.nombre AS nombreModalidad,
+            it.ponderacion,
+            mt.codn,
+            nv.nombre AS nombreNivel,
+            ROUND((n.nota * it.ponderacion / 100.0)::numeric, 2) AS notaPonderada
+        FROM academico.notas n
+        INNER JOIN academico.materia mt ON n.codmat = mt.codmat
+        INNER JOIN academico.items i ON n.codi = i.codi
+        INNER JOIN academico.paralelo p ON n.coda = p.codp
+        INNER JOIN public.sys_user u ON n.idusuario = u.id
+        INNER JOIN academico.personal per ON n.idusuario = per.idusuario
+        LEFT JOIN academico.dmodalidad dm ON n.coddm = dm.coddm
+        LEFT JOIN academico.itemat it ON n.codmat = it.codmat 
+            AND n.codi = it.codi 
+            AND n.gestion = it.gestion
+        LEFT JOIN academico.niveles nv ON mt.codn = nv.codn
+        <where>
+            <if test="gestion != null">
+                AND n.gestion = #{gestion}
+            </if>
+            <if test="codmat != null and codmat != ''">
+                AND n.codmat = #{codmat}
+            </if>
+            <if test="idusuario != null">
+                AND n.idusuario = #{idusuario}
+            </if>
+            <if test="blurry != null and blurry != ''">
+                AND (
+                    mt.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR i.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR per.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR per.ap ILIKE CONCAT('%', #{blurry}, '%')
+                    OR mt.codmat ILIKE CONCAT('%', #{blurry}, '%')
+                )
+            </if>
+        </where>
+        ORDER BY mt.nombre ASC, per.nombre ASC, i.nombre ASC
+    </select>
+
+    <!-- Obtener nota específica -->
+    <select id="getNotaByKeys" resultMap="notasResult">
+        SELECT 
+            n.codmat,
+            n.codi,
+            n.coda,
+            n.codp,
+            n.gestion,
+            n.idusuario,
+            n.nota,
+            n.coddm,
+            mt.nombre AS nombreMateria,
+            i.nombre AS nombreItem,
+            p.nombre AS nombreParalelo,
+            CONCAT(per.nombre, ' ', per.ap, ' ', COALESCE(per.am, '')) AS nombreEstudiante,
+            dm.nombre AS nombreModalidad,
+            it.ponderacion
+        FROM academico.notas n
+        INNER JOIN academico.materia mt ON n.codmat = mt.codmat
+        INNER JOIN academico.items i ON n.codi = i.codi
+        INNER JOIN academico.paralelo p ON n.coda = p.codp
+        INNER JOIN academico.personal per ON n.idusuario = per.idusuario
+        LEFT JOIN academico.dmodalidad dm ON n.coddm = dm.coddm
+        LEFT JOIN academico.itemat it ON n.codmat = it.codmat 
+            AND n.codi = it.codi 
+            AND n.gestion = it.gestion
+        WHERE n.codmat = #{codmat}
+          AND n.codi = #{codi}
+          AND n.coda = #{coda}
+          AND n.codp = #{codp}
+          AND n.gestion = #{gestion}
+          AND n.idusuario = #{idusuario}
+    </select>
+
+    <!-- Notas de un estudiante en una materia -->
+    <select id="getNotasEstudianteMateria" resultMap="notasResult">
+        SELECT 
+            n.codmat,
+            n.codi,
+            n.nota,
+            i.nombre AS nombreItem,
+            it.ponderacion,
+            ROUND((n.nota * it.ponderacion / 100.0)::numeric, 2) AS notaPonderada
+        FROM academico.notas n
+        INNER JOIN academico.items i ON n.codi = i.codi
+        LEFT JOIN academico.itemat it ON n.codmat = it.codmat 
+            AND n.codi = it.codi 
+            AND n.gestion = it.gestion
+        WHERE n.codmat = #{codmat}
+          AND n.idusuario = #{idusuario}
+          AND n.gestion = #{gestion}
+        ORDER BY i.nombre ASC
+    </select>
+
+    <!-- Notas de un paralelo para un ítem -->
+    <select id="getNotasParaleloItem" resultMap="notasResult">
+        SELECT 
+            n.idusuario,
+            n.nota,
+            CONCAT(per.nombre, ' ', per.ap, ' ', COALESCE(per.am, '')) AS nombreEstudiante,
+            u.email AS emailEstudiante
+        FROM academico.notas n
+        INNER JOIN public.sys_user u ON n.idusuario = u.id
+        INNER JOIN academico.personal per ON n.idusuario = per.idusuario
+        WHERE n.codmat = #{codmat}
+          AND n.coda = #{coda}
+          AND n.codi = #{codi}
+          AND n.gestion = #{gestion}
+        ORDER BY per.nombre ASC
+    </select>
+
+    <!-- Calcular nota final ponderada -->
+    <select id="calcularNotaFinal" resultType="java.lang.Double">
+        SELECT 
+            ROUND(SUM((n.nota * it.ponderacion / 100.0))::numeric, 2)
+        FROM academico.notas n
+        LEFT JOIN academico.itemat it ON n.codmat = it.codmat 
+            AND n.codi = it.codi 
+            AND n.gestion = it.gestion
+        WHERE n.codmat = #{codmat}
+          AND n.idusuario = #{idusuario}
+          AND n.gestion = #{gestion}
+    </select>
+
+</mapper>
