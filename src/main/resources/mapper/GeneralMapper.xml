@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.GeneralMapper">
+    
+    <!-- Mapeo de resultados con JOINs -->
+    <resultMap id="generalResult" type="taller1.grupo.vueadmin.system.entity.dto.GeneralDto">
+        <result column="ids" property="ids" jdbcType="INTEGER"/>
+        <result column="gestion" property="gestion" jdbcType="INTEGER"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="email" property="email" jdbcType="VARCHAR"/>
+        <result column="nickName" property="nickName" jdbcType="VARCHAR"/>
+        <result column="enabled" property="enabled" jdbcType="BOOLEAN"/>
+        <result column="nombreCompleto" property="nombreCompleto" jdbcType="VARCHAR"/>
+        <result column="tipo" property="tipo" jdbcType="VARCHAR"/>
+        <result column="telf" property="telf" jdbcType="VARCHAR"/>
+        <result column="totalMaterias" property="totalMaterias" jdbcType="INTEGER"/>
+        <result column="totalNotas" property="totalNotas" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- Consulta paginada con filtros -->
+    <select id="queryGeneralTable" resultMap="generalResult">
+        SELECT 
+            g.ids,
+            g.gestion,
+            u.username,
+            u.email,
+            u.nick_name AS nickName,
+            u.enabled,
+            CONCAT(p.nombre, ' ', COALESCE(p.ap, ''), ' ', COALESCE(p.am, '')) AS nombreCompleto,
+            p.tipo,
+            p.telf,
+            (
+                SELECT COUNT(DISTINCT pr.codmat)
+                FROM academico.progra pr
+                WHERE pr.ids = g.ids AND pr.gestion = g.gestion
+            ) AS totalMaterias,
+            (
+                SELECT COUNT(*)
+                FROM academico.notas n
+                WHERE n.idusuario = g.ids AND n.gestion = g.gestion
+            ) AS totalNotas
+        FROM academico.general g
+        INNER JOIN public.sys_user u ON g.ids = u.id
+        LEFT JOIN academico.personal p ON g.ids = p.idusuario
+        <where>
+            <if test="gestion != null">
+                AND g.gestion = #{gestion}
+            </if>
+            <if test="blurry != null and blurry != ''">
+                AND (
+                    u.username ILIKE CONCAT('%', #{blurry}, '%')
+                    OR u.email ILIKE CONCAT('%', #{blurry}, '%')
+                    OR u.nick_name ILIKE CONCAT('%', #{blurry}, '%')
+                    OR p.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR p.ap ILIKE CONCAT('%', #{blurry}, '%')
+                )
+            </if>
+        </where>
+        ORDER BY g.gestion DESC, u.username ASC
+    </select>
+
+    <!-- Obtener información de un usuario en una gestión -->
+    <select id="getGeneralByUserAndGestion" resultMap="generalResult">
+        SELECT 
+            g.ids,
+            g.gestion,
+            u.username,
+            u.email,
+            u.nick_name AS nickName,
+            u.enabled,
+            CONCAT(p.nombre, ' ', COALESCE(p.ap, ''), ' ', COALESCE(p.am, '')) AS nombreCompleto,
+            p.tipo,
+            p.telf,
+            (
+                SELECT COUNT(DISTINCT pr.codmat)
+                FROM academico.progra pr
+                WHERE pr.ids = g.ids AND pr.gestion = g.gestion
+            ) AS totalMaterias,
+            (
+                SELECT COUNT(*)
+                FROM academico.notas n
+                WHERE n.idusuario = g.ids AND n.gestion = g.gestion
+            ) AS totalNotas
+        FROM academico.general g
+        INNER JOIN public.sys_user u ON g.ids = u.id
+        LEFT JOIN academico.personal p ON g.ids = p.idusuario
+        WHERE g.ids = #{ids}
+          AND g.gestion = #{gestion}
+    </select>
+
+    <!-- Obtener gestiones de un usuario -->
+    <select id="getGestionesByUser" resultType="java.lang.Integer">
+        SELECT gestion
+        FROM academico.general
+        WHERE ids = #{ids}
+        ORDER BY gestion DESC
+    </select>
+
+    <!-- Verificar existencia -->
+    <select id="existeEnGestion" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM academico.general
+        WHERE ids = #{ids}
+          AND gestion = #{gestion}
+    </select>
+
+</mapper>

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import taller1.grupo.vueadmin.common.exception.BadRequestException;
 import taller1.grupo.vueadmin.system.entity.Notas;
+import taller1.grupo.vueadmin.system.entity.Progra;
 import taller1.grupo.vueadmin.system.entity.dto.NotasDto;
 import taller1.grupo.vueadmin.system.entity.dto.QueryDto;
 import taller1.grupo.vueadmin.system.mapper.*;
@@ -73,11 +74,11 @@ public class NotasServiceImpl implements NotasService {
         }
 
         // Validar que el estudiante esté inscrito en PROGRA
-        var inscripcion = prograMapper.selectOne(new LambdaQueryWrapper<>()
-            .eq(true, notasDto.getCodmat())
-            .eq(true, notasDto.getCoda())
-            .eq(true, notasDto.getCodp())
-            .eq(true, notasDto.getGestion()));
+        var inscripcion = prograMapper.selectOne(new LambdaQueryWrapper<Progra>()
+    .eq(Progra::getCodmat, notasDto.getCodmat())
+    .eq(Progra::getCodpar, notasDto.getCoda())
+    .eq(Progra::getCodp, notasDto.getCodp())
+    .eq(Progra::getGestion, notasDto.getGestion()));
         
         if (inscripcion == null) {
             throw new BadRequestException(
