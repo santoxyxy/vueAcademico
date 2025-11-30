@@ -25,13 +25,13 @@ public class Mapa extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId("codmat")
+    @TableField("codmat")
     private String codmat;  // PK1: Código de materia
 
-    @TableId("codpar")
+    @TableField("codpar")
     private Integer codpar; // PK2: Código de paralelo
 
-    @TableId("gestion")
+    @TableField("gestion")
     private Integer gestion; // PK3: Año académico
 
     @TableField("estado")

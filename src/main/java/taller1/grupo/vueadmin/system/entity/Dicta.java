@@ -25,16 +25,16 @@ public class Dicta extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId("codpar")
+    @TableField("codpar")
     private Integer codpar;   // PK1: Código paralelo (sección)
 
-    @TableId("codp")
+    @TableField("codp")
     private Integer codp;     // PK2: Código periodo (siempre 1 en este diseño)
 
-    @TableId("codmat")
+    @TableField("codmat")
     private String codmat;    // PK3: Código materia
 
-    @TableId("gestion")
+    @TableField("gestion")
     private Integer gestion;  // PK4: Año académico
 
     @TableField("ids")

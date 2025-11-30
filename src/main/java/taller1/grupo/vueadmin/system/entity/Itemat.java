@@ -25,13 +25,13 @@ public class Itemat extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId("codmat")
+    @TableField("codmat")
     private String codmat;    // PK1: Código de materia
 
-    @TableId("codi")
+    @TableField("codi")
     private Integer codi;     // PK2: Código de ítem
 
-    @TableId("gestion")
+    @TableField("gestion")
     private Integer gestion;  // PK3: Año académico
 
     @TableField("ponderacion")

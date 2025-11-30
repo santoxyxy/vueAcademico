@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="taller1.grupo.vueadmin.system.mapper.DmodalidadMapper">
+    
+    <!-- Mapeo de resultados con JOIN -->
+    <resultMap id="dmodalidadResult" type="taller1.grupo.vueadmin.system.entity.dto.DmodalidadDto">
+        <result column="coddm" property="coddm" jdbcType="INTEGER"/>
+        <result column="nombre" property="nombre" jdbcType="VARCHAR"/>
+        <result column="estado" property="estado" jdbcType="INTEGER"/>
+        <result column="codm" property="codm" jdbcType="INTEGER"/>
+        <result column="nombreModalidad" property="nombreModalidad" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- Consulta paginada con filtro -->
+    <select id="queryDmodalidadTable" resultMap="dmodalidadResult">
+        SELECT 
+            dm.coddm,
+            dm.nombre,
+            dm.estado,
+            dm.codm,
+            m.nombre AS nombreModalidad
+        FROM academico.dmodalidad dm
+        LEFT JOIN academico.modalidad m ON dm.codm = m.codm
+        <where>
+            <if test="blurry != null and blurry != ''">
+                AND (
+                    dm.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                    OR m.nombre ILIKE CONCAT('%', #{blurry}, '%')
+                )
+            </if>
+        </where>
+        ORDER BY dm.coddm ASC
+    </select>
+
+    <!-- Obtener detalles por modalidad -->
+    <select id="getDetallesByModalidad" resultMap="dmodalidadResult">
+        SELECT 
+            dm.coddm,
+            dm.nombre,
+            dm.estado,
+            dm.codm,
+            m.nombre AS nombreModalidad
+        FROM academico.dmodalidad dm
+        LEFT JOIN academico.modalidad m ON dm.codm = m.codm
+        WHERE dm.codm = #{codm}
+        ORDER BY dm.nombre ASC
+    </select>
+
+</mapper>
