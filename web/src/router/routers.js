@@ -19,6 +19,22 @@ export const routerMap = [
         component: () => import('../views/error/404')
     },
     {
+  path: '/progra',
+  component: () => import('@/views/progra/index.vue'),
+  name: 'Progra',
+  meta: { title: 'Clases Ofertadas' }
+},
+    {
+  path: '/general',
+  component: () => import('@/views/general/index.vue'),
+  name: 'General',
+  meta: {
+    title: 'Gestión General',
+    icon: 'Calendar',
+    requiresAuth: true
+  }
+},
+    {
         path: '/Layout',
         name: 'Layout',
         component: Layout,
