@@ -100,7 +100,13 @@ export function addRoute(){
         console.info(routers)
         routers.forEach(item => {
             if (item.path){
-                router.addRoute('Layout', {
+                let componentPath = item.component;
+                
+                // ➡️ AÑADIR .vue SI EL VALOR NO LO TRAE
+                if (componentPath && !componentPath.endsWith('.vue')) {
+                     componentPath = componentPath + '.vue';
+                }
+                router.addRoute('LayoutView', {
                     path: item.path,
                     name: item.name,
                     component: item.component != null ? () => import(`@/views/${item.component}`) : null

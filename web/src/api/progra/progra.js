@@ -1,50 +1,56 @@
 import request from '@/utils/request'
 
 /**
- * API de PROGRA - Clases ofertadas
+ * Obtener tabla de clases paginada
  */
-
-// Consultar tabla de clases con paginación
-export function getPrograTable(params) {
+export function queryPrograTable(params) {
   return request({
-    url: '/sys/progra/table',
+    url: '/api/sys/progra/table',
     method: 'get',
-    params: params
+    params // { page, size, blurry, gestion, codmat, codn }
   })
 }
 
-// Obtener clases que dicta un docente
+/**
+ * Obtener clases de un docente
+ */
 export function getClasesByDocente(ids, gestion) {
   return request({
-    url: `/sys/progra/docente/${ids}`,
+    url: `/api/sys/progra/docente/${ids}`,
     method: 'get',
     params: { gestion }
   })
 }
 
-// Obtener paralelos ofertados de una materia
+/**
+ * Obtener paralelos de una materia
+ */
 export function getParalelosByMateria(codmat, gestion) {
   return request({
-    url: `/sys/progra/materia/${codmat}`,
+    url: `/api/sys/progra/materia/${codmat}`,
     method: 'get',
     params: { gestion }
   })
 }
 
-// Crear o actualizar clase
+/**
+ * Crear o actualizar clase ofertada
+ */
 export function editProgra(data) {
   return request({
-    url: '/sys/progra/edit',
+    url: '/api/sys/progra/edit',
     method: 'post',
-    data: data
+    data
   })
 }
 
-// Eliminar clase
+/**
+ * Eliminar clase ofertada
+ */
 export function delProgra(params) {
   return request({
-    url: '/sys/progra/del',
+    url: '/api/sys/progra/del',
     method: 'delete',
-    params: params
+    params // { codpar, codp, codmat, gestion }
   })
 }

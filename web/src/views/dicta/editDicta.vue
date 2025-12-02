@@ -25,54 +25,50 @@
         </el-col>
 
         <el-col :span="12">
-          <el-form-item label="Materia" prop="codmat">
-            <el-select 
-              v-model="state.form.codmat" 
-              placeholder="Seleccione materia"
-              filterable
-              style="width: 100%"
-            >
-              <el-option 
-                v-for="item in state.materiaList" 
-                :key="item.codmat" 
-                :label="`${item.codmat} - ${item.nombre}`" 
-                :value="item.codmat"
-              />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="Paralelo" prop="codpar">
-            <el-select 
-              v-model="state.form.codpar" 
-              placeholder="Paralelo"
-              style="width: 100%"
-            >
-              <el-option 
-                v-for="item in state.paraleloList" 
-                :key="item.codpar" 
-                :label="item.nombre" 
-                :value="item.codpar"
-              />
-            </el-select>
-          </el-form-item>
-        </el-col>
-
-        <el-col :span="12">
           <el-form-item label="Periodo" prop="codp">
-            <el-input-number 
+            <el-select 
               v-model="state.form.codp" 
-              :min="1"
-              :max="2"
+              placeholder="Periodo"
               style="width: 100%"
-              placeholder="1 o 2"
-            />
+            >
+              <el-option label="1° Periodo" :value="1" />
+              <el-option label="2° Periodo" :value="2" />
+            </el-select>
           </el-form-item>
         </el-col>
       </el-row>
+
+      <el-form-item label="Materia" prop="codmat">
+        <el-select 
+          v-model="state.form.codmat" 
+          placeholder="Seleccione materia"
+          filterable
+          style="width: 100%"
+          @change="onMateriaChange"
+        >
+          <el-option 
+            v-for="item in state.materiaList" 
+            :key="item.codmat" 
+            :label="`${item.codmat} - ${item.nombre}`" 
+            :value="item.codmat"
+          />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item label="Paralelo" prop="codpar">
+        <el-select 
+          v-model="state.form.codpar" 
+          placeholder="Seleccione paralelo"
+          style="width: 100%"
+        >
+          <el-option 
+            v-for="item in state.paraleloList" 
+            :key="item.codpar" 
+            :label="item.nombre" 
+            :value="item.codpar"
+          />
+        </el-select>
+      </el-form-item>
 
       <el-form-item label="Docente" prop="ids">
         <el-select 
@@ -84,9 +80,16 @@
           <el-option 
             v-for="item in state.docenteList" 
             :key="item.ids" 
-            :label="`${item.nombre} ${item.ap || ''} ${item.am || ''}`" 
+            :label="`${item.nombre} ${item.ap || ''} ${item.am || ''} (${item.tipo || 'N/A'})`" 
             :value="item.ids"
-          />
+          >
+            <div style="display: flex; justify-content: space-between;">
+              <span>{{ item.nombre }} {{ item.ap }} {{ item.am }}</span>
+              <el-tag size="small" :type="getDocenteTagType(item.tipo)">
+                {{ item.tipo }}
+              </el-tag>
+            </div>
+          </el-option>
         </el-select>
       </el-form-item>
     </el-form>
@@ -102,13 +105,13 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import { editProgra } from '@/api/progra/progra'
+import { editDicta } from '@/api/dicta/dicta'
 import { errorMsg, successMsg } from '@/utils/message'
 import { resetForm } from '@/utils/common'
 
 const props = defineProps({
   dialogVisible: { type: Boolean, required: true, default: false },
-  prograObj: { type: Object, default: () => ({}) }
+  dictaObj: { type: Object, default: () => ({}) }
 })
 
 const emit = defineEmits(['update:dialogVisible', 'get-list'])
@@ -122,7 +125,7 @@ const isLoading = ref(false)
 const formRef = ref()
 
 const state = reactive({
-  title: 'Nueva Clase',
+  title: 'Nueva Asignación',
   form: {
     codpar: null,
     codp: 1,
@@ -132,9 +135,9 @@ const state = reactive({
   },
   rules: {
     gestion: [{ required: true, message: 'La gestión es obligatoria', trigger: 'blur' }],
+    codp: [{ required: true, message: 'El periodo es obligatorio', trigger: 'change' }],
     codmat: [{ required: true, message: 'Debe seleccionar una materia', trigger: 'change' }],
     codpar: [{ required: true, message: 'Debe seleccionar un paralelo', trigger: 'change' }],
-    codp: [{ required: true, message: 'El periodo es obligatorio', trigger: 'blur' }],
     ids: [{ required: true, message: 'Debe seleccionar un docente', trigger: 'change' }]
   },
   materiaList: [],
@@ -144,52 +147,71 @@ const state = reactive({
 
 const openFun = () => {
   resetForm(formRef.value)
-  state.title = 'Nueva Clase'
+  state.title = 'Nueva Asignación'
   isLoading.value = false
   
-  // TODO: Cargar listas desde API
+  // Cargar listas
   loadSelectOptions()
 
-  if (props.prograObj.codpar) {
-    state.title = 'Editar Clase'
-    state.form = { ...props.prograObj }
+  if (props.dictaObj.codpar) {
+    state.title = 'Editar Asignación'
+    state.form = { ...props.dictaObj }
   } else {
     state.form = {
       codpar: null,
       codp: 1,
       codmat: '',
-      gestion: props.prograObj.gestion || new Date().getFullYear(),
+      gestion: props.dictaObj.gestion || new Date().getFullYear(),
       ids: null
     }
   }
 }
 
 const loadSelectOptions = () => {
-  // TODO: Implementar llamadas reales a API
-  // getMateriaList(), getParaleloList(), getDocenteList()
+  // TODO: Implementar llamadas reales
+  // import { getMateriaList } from '@/api/materia/materia'
+  // import { getParaleloList } from '@/api/paralelo/paralelo'
+  // import { getPersonalList } from '@/api/personal/personal'
   
-  // Datos temporales de ejemplo
+  // Datos de ejemplo
   state.materiaList = [
-    { codmat: 'MAT101', nombre: 'Matemáticas I' },
-    { codmat: 'FIS101', nombre: 'Física I' }
+    { codmat: 'MAT101', nombre: 'Matemáticas I', codn: 1 },
+    { codmat: 'FIS101', nombre: 'Física I', codn: 1 },
+    { codmat: 'MAT201', nombre: 'Matemáticas II', codn: 2 }
   ]
   
   state.paraleloList = [
     { codpar: 1, nombre: 'A' },
-    { codpar: 2, nombre: 'B' }
+    { codpar: 2, nombre: 'B' },
+    { codpar: 3, nombre: 'C' }
   ]
   
   state.docenteList = [
-    { ids: 1, nombre: 'Juan', ap: 'Pérez', am: 'López' },
-    { ids: 2, nombre: 'María', ap: 'García', am: 'Ruiz' }
+    { ids: 1, nombre: 'Juan', ap: 'Pérez', am: 'López', tipo: 'Titular' },
+    { ids: 2, nombre: 'María', ap: 'García', am: 'Ruiz', tipo: 'Invitado' },
+    { ids: 3, nombre: 'Carlos', ap: 'Fernández', am: '', tipo: 'Auxiliar' }
   ]
+}
+
+const onMateriaChange = (codmat) => {
+  // Opcional: filtrar docentes según la materia seleccionada
+  console.log('Materia seleccionada:', codmat)
+}
+
+const getDocenteTagType = (tipo) => {
+  const types = {
+    'Titular': 'success',
+    'Invitado': 'warning',
+    'Auxiliar': 'info'
+  }
+  return types[tipo] || ''
 }
 
 const submitForm = () => {
   formRef.value.validate((valid) => {
     if (valid) {
       isLoading.value = true
-      editProgra(state.form).then((res) => {
+      editDicta(state.form).then((res) => {
         if (res.success) {
           successMsg(res.data)
           visible.value = false
@@ -203,3 +225,10 @@ const submitForm = () => {
   })
 }
 </script>
+
+<style scoped>
+:deep(.el-select-dropdown__item) {
+  height: auto;
+  padding: 8px;
+}
+</style>

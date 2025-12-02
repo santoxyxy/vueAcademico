@@ -7,7 +7,7 @@
         placeholder="Buscar por materia o docente"
         clearable
         style="width: 250px"
-        @keyup.enter="getPrograListFun"
+        @keyup.enter="getDictaListFun"
       />
       
       <el-select 
@@ -40,12 +40,12 @@
         style="width: 120px"
       />
 
-      <el-button type="primary" icon="Search" @click="getPrograListFun">
+      <el-button type="primary" icon="Search" @click="getDictaListFun">
         Buscar
       </el-button>
       
-      <el-button type="success" icon="Plus" @click="addProgra" v-if="hasPer(['ROLE_ADMIN'])">
-        Nueva Clase
+      <el-button type="success" icon="Plus" @click="addDicta" v-if="hasPer(['ROLE_ADMIN'])">
+        Nueva Asignación
       </el-button>
     </div>
 
@@ -68,6 +68,14 @@
       
       <el-table-column prop="nombreParalelo" label="Paralelo" width="100" align="center" />
       
+      <el-table-column prop="codp" label="Periodo" width="90" align="center">
+        <template #default="{ row }">
+          <el-tag :type="row.codp === 1 ? 'success' : 'warning'" size="small">
+            {{ row.codp }}° Periodo
+          </el-tag>
+        </template>
+      </el-table-column>
+      
       <el-table-column prop="nombreDocente" label="Docente" min-width="180" show-overflow-tooltip />
       
       <el-table-column prop="tipoDocente" label="Tipo" width="100">
@@ -78,11 +86,11 @@
         </template>
       </el-table-column>
 
-      <el-table-column prop="cantidadEstudiantes" label="Estudiantes" width="110" align="center">
+      <el-table-column prop="emailDocente" label="Email" min-width="180" show-overflow-tooltip>
         <template #default="{ row }">
-          <el-tag type="info" size="small">
-            {{ row.cantidadEstudiantes || 0 }}
-          </el-tag>
+          <el-link :href="`mailto:${row.emailDocente}`" type="primary" :underline="false">
+            {{ row.emailDocente }}
+          </el-link>
         </template>
       </el-table-column>
 
@@ -92,14 +100,14 @@
             type="primary" 
             size="small" 
             icon="Edit"
-            @click="editProgra(row)"
+            @click="editDicta(row)"
             v-if="hasPer(['ROLE_ADMIN', 'ROLE_DOCENTE'])"
           >
             Editar
           </el-button>
           <el-popconfirm
-            title="¿Eliminar esta clase?"
-            @confirm="delProgra(row)"
+            title="¿Eliminar esta asignación?"
+            @confirm="delDicta(row)"
             v-if="hasPer(['ROLE_ADMIN'])"
           >
             <template #reference>
@@ -117,25 +125,25 @@
       :total="state.total" 
       :page="state.current" 
       :limit="state.size" 
-      @pagination="getPrograListFun"
+      @pagination="getDictaListFun"
     />
 
     <!-- Dialog -->
-    <EditProgra 
+    <EditDicta 
       v-model:dialogVisible="dialogVisible" 
-      :prograObj="currentProgra"
-      @get-list="getPrograListFun"
+      :dictaObj="currentDicta"
+      @get-list="getDictaListFun"
     />
   </div>
 </template>
 
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
-import { queryPrograTable, delProgra as delPrograApi } from '@/api/progra/progra'
+import { queryDictaTable, delDicta as delDictaApi } from '@/api/dicta/dicta'
 import { errorMsg, successMsg } from '@/utils/message'
 import { hasPer } from '@/utils/common'
 import Pagination from '@/components/Pagination.vue'
-import EditProgra from './editProgra.vue'
+import EditDicta from './editDicta.vue'
 
 const state = reactive({
   blurry: '',
@@ -150,14 +158,14 @@ const state = reactive({
 })
 
 const dialogVisible = ref(false)
-const currentProgra = ref({})
+const currentDicta = ref({})
 
 // Generar últimos 5 años para el select
 const gestiones = ref(
   Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 )
 
-const getPrograListFun = (obj) => {
+const getDictaListFun = (obj) => {
   if (obj && obj.page) state.current = obj.page
   if (obj && obj.limit) state.size = obj.limit
 
@@ -171,7 +179,7 @@ const getPrograListFun = (obj) => {
     currentPage: state.current
   }
 
-  queryPrograTable(params)
+  queryDictaTable(params)
     .then((res) => {
       state.loading = false
       if (res.success) {
@@ -186,17 +194,17 @@ const getPrograListFun = (obj) => {
     })
 }
 
-const addProgra = () => {
-  currentProgra.value = { gestion: state.gestion }
+const addDicta = () => {
+  currentDicta.value = { gestion: state.gestion }
   dialogVisible.value = true
 }
 
-const editProgra = (row) => {
-  currentProgra.value = { ...row }
+const editDicta = (row) => {
+  currentDicta.value = { ...row }
   dialogVisible.value = true
 }
 
-const delProgra = (row) => {
+const delDicta = (row) => {
   const params = {
     codpar: row.codpar,
     codp: row.codp,
@@ -204,10 +212,10 @@ const delProgra = (row) => {
     gestion: row.gestion
   }
   
-  delPrograApi(params).then((res) => {
+  delDictaApi(params).then((res) => {
     if (res.success) {
       successMsg(res.data)
-      getPrograListFun()
+      getDictaListFun()
     } else {
       errorMsg(res.msg)
     }
@@ -224,7 +232,7 @@ const getDocenteTagType = (tipo) => {
 }
 
 onMounted(() => {
-  getPrograListFun()
+  getDictaListFun()
 })
 </script>
 
