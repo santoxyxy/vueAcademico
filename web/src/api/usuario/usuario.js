@@ -3,7 +3,7 @@ import request from "../../utils/request";
 export function queryUsuarioTable(params){
     return request({
         //url: '/api/sys/clientes/list',
-        url: '/api/sys/usuario/table',
+        url: '/sys/usuario/table',
         method: 'get',
         params
     })
@@ -12,7 +12,7 @@ export function queryUsuarioTable(params){
 // cambiar estado del usuario 
 export function estadoUsuario(data){
     return request({
-        url: '/api/sys/usuario/estado/edit',
+        url: '/sys/usuario/estado/edit',
         method: 'post',
         data
     })
@@ -21,7 +21,7 @@ export function estadoUsuario(data){
 export function editUsuario(data){
 // editar y adicionar 
     return request({
-        url: '/api/sys/usuario/edit',
+        url: '/sys/usuario/edit',
         method: 'post',
         data
     })

@@ -6,7 +6,7 @@ import request from "@/utils/request";
  */
 export function getGeneralList(gestion) {
   return request({
-    url: '/api/sys/general/list',
+    url: '/sys/general/list',
     method: 'get',
     params: { gestion }
   });
@@ -19,7 +19,7 @@ export function getGeneralList(gestion) {
  */
 export function queryGeneralTable(params, gestion) {
   return request({
-    url: '/api/sys/general/table',
+    url: '/sys/general/table',
     method: 'get',
     params: { ...params, gestion }
   });
@@ -32,7 +32,7 @@ export function queryGeneralTable(params, gestion) {
  */
 export function getGeneralByUserAndGestion(ids, gestion) {
   return request({
-    url: `/api/sys/general/usuario/${ids}/gestion/${gestion}`,
+    url: `/sys/general/usuario/${ids}/gestion/${gestion}`,
     method: 'get'
   });
 }
@@ -43,7 +43,7 @@ export function getGeneralByUserAndGestion(ids, gestion) {
  */
 export function getGestionesByUser(ids) {
   return request({
-    url: `/api/sys/general/usuario/${ids}/gestiones`,
+    url: `/sys/general/usuario/${ids}/gestiones`,
     method: 'get'
   });
 }
@@ -54,7 +54,7 @@ export function getGestionesByUser(ids) {
  */
 export function registrarEnGestion(data) {
   return request({
-    url: '/api/sys/general/registrar',
+    url: '/sys/general/registrar',
     method: 'post',
     data
   });
@@ -66,7 +66,7 @@ export function registrarEnGestion(data) {
  */
 export function editGeneral(data) {
   return request({
-    url: '/api/sys/general/edit',
+    url: '/sys/general/edit',
     method: 'post',
     data
   });
@@ -79,7 +79,7 @@ export function editGeneral(data) {
  */
 export function delGeneral(ids, gestion) {
   return request({
-    url: '/api/sys/general/del',
+    url: '/sys/general/del',
     method: 'delete',
     params: { ids, gestion }
   });

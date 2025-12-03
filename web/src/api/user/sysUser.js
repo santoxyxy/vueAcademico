@@ -7,7 +7,7 @@ import request from "../../utils/request";
  */
 export function getUserList(params){
     return request({
-        url: '/api/sys/user/table',
+        url: '/sys/user/table',
         method: 'get',
         params
     })
@@ -20,7 +20,7 @@ export function getUserList(params){
  */
 export function editUser(data){
     return request({
-        url: '/api/sys/user/edit',
+        url: '/sys/user/edit',
         method: 'post',
         data
     })

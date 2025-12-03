@@ -5,7 +5,7 @@ import request from '@/utils/request'
  */
 export function getDmodalidadList(blurry) {
   return request({
-    url: '/api/sys/dmodalidad/list',
+    url: '/sys/dmodalidad/list',
     method: 'get',
     params: { blurry }
   })
@@ -16,7 +16,7 @@ export function getDmodalidadList(blurry) {
  */
 export function queryDmodalidadTable(params) {
   return request({
-    url: '/api/sys/dmodalidad/table',
+    url: '/sys/dmodalidad/table',
     method: 'get',
     params // { page, size, blurry }
   })
@@ -27,7 +27,7 @@ export function queryDmodalidadTable(params) {
  */
 export function getDetallesByModalidad(codm) {
   return request({
-    url: `/api/sys/dmodalidad/modalidad/${codm}`,
+    url: `/sys/dmodalidad/modalidad/${codm}`,
     method: 'get'
   })
 }
@@ -37,7 +37,7 @@ export function getDetallesByModalidad(codm) {
  */
 export function editDmodalidad(data) {
   return request({
-    url: '/api/sys/dmodalidad/edit',
+    url: '/sys/dmodalidad/edit',
     method: 'post',
     data
   })
@@ -48,7 +48,7 @@ export function editDmodalidad(data) {
  */
 export function delDmodalidad(id) {
   return request({
-    url: '/api/sys/dmodalidad/del',
+    url: '/sys/dmodalidad/del',
     method: 'delete',
     params: { id }
   })

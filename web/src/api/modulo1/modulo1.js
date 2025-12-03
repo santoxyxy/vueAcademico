@@ -2,7 +2,7 @@ import request from "../../utils/request";
 
 export function getModulo1Table(params){
     return request({
-        url: '/api/sys/modulo1/table',
+        url: '/sys/modulo1/table',
         method: 'get',
         params
     })
@@ -10,7 +10,7 @@ export function getModulo1Table(params){
 
 export function editModulo1(data){
     return request({
-        url: '/api/sys/modulo1/edit',
+        url: '/sys/modulo1/edit',
         method: 'post',
         data
     })
@@ -20,7 +20,7 @@ export function editModulo1(data){
 // detalle de clientes 
 export function getModulo1DClientesTable(params){
     return request({
-        url: '/api/sys/modulo1/tabledclientes',
+        url: '/sys/modulo1/tabledclientes',
         method: 'get',
         params
     })
@@ -30,7 +30,7 @@ export function getModulo1DClientesTable(params){
 // editar el cliente 
 export function editCliente(data){
     return request({
-        url: '/api/sys/modulo1/edit',
+        url: '/sys/modulo1/edit',
         method: 'post',
         data
     })
@@ -39,7 +39,7 @@ export function editCliente(data){
 // eliminar 
 export function delModulo1(params){
     return request({
-        url: '/api/sys/modulo1/del',
+        url: '/sys/modulo1/del',
         method: 'delete',
         params
     })
@@ -49,7 +49,7 @@ export function delModulo1(params){
 //getModulo1DClientesPedidosTable
 export function getModulo1DClientesPedidosTable(params){
     return request({
-        url: '/api/sys/modulo1/tabledclientespedido',
+        url: '/sys/modulo1/tabledclientespedido',
         method: 'get',
         params
     })

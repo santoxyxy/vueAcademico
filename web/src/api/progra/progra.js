@@ -5,7 +5,7 @@ import request from '@/utils/request'
  */
 export function queryPrograTable(params) {
   return request({
-    url: '/api/sys/progra/table',
+    url: '/sys/progra/table',
     method: 'get',
     params // { page, size, blurry, gestion, codmat, codn }
   })
@@ -16,7 +16,7 @@ export function queryPrograTable(params) {
  */
 export function getClasesByDocente(ids, gestion) {
   return request({
-    url: `/api/sys/progra/docente/${ids}`,
+    url: `/sys/progra/docente/${ids}`,
     method: 'get',
     params: { gestion }
   })
@@ -27,7 +27,7 @@ export function getClasesByDocente(ids, gestion) {
  */
 export function getParalelosByMateria(codmat, gestion) {
   return request({
-    url: `/api/sys/progra/materia/${codmat}`,
+    url: `/sys/progra/materia/${codmat}`,
     method: 'get',
     params: { gestion }
   })
@@ -38,7 +38,7 @@ export function getParalelosByMateria(codmat, gestion) {
  */
 export function editProgra(data) {
   return request({
-    url: '/api/sys/progra/edit',
+    url: '/sys/progra/edit',
     method: 'post',
     data
   })
@@ -49,7 +49,7 @@ export function editProgra(data) {
  */
 export function delProgra(params) {
   return request({
-    url: '/api/sys/progra/del',
+    url: '/sys/progra/del',
     method: 'delete',
     params // { codpar, codp, codmat, gestion }
   })

@@ -6,7 +6,7 @@ import request from "@/utils/request";
  */
 export function getMateriaList(blurry) {
   return request({
-    url: '/api/sys/materia/list',
+    url: '/sys/materia/list',
     method: 'get',
     params: { blurry }
   });
@@ -18,7 +18,7 @@ export function getMateriaList(blurry) {
  */
 export function queryMateriaTable(params) {
   return request({
-    url: '/api/sys/materia/table',
+    url: '/sys/materia/table',
     method: 'get',
     params
   });
@@ -30,7 +30,7 @@ export function queryMateriaTable(params) {
  */
 export function getMateria(codmat) {
   return request({
-    url: `/api/sys/materia/${codmat}`,
+    url: `/sys/materia/${codmat}`,
     method: 'get'
   });
 }
@@ -41,7 +41,7 @@ export function getMateria(codmat) {
  */
 export function editMateria(data) {
   return request({
-    url: '/api/sys/materia/edit',
+    url: '/sys/materia/edit',
     method: 'post',
     data
   });
@@ -53,7 +53,7 @@ export function editMateria(data) {
  */
 export function delMateria(codmat) {
   return request({
-    url: '/api/sys/materia/del',
+    url: '/sys/materia/del',
     method: 'delete',
     params: { codmat }
   });

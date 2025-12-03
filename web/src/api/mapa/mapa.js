@@ -7,7 +7,7 @@ import request from "@/utils/request";
  */
 export function getMapaTable(params) {
     return request({
-        url: '/api/sys/mapa/table',
+        url: '/sys/mapa/table',
         method: 'get',
         params
     });
@@ -21,7 +21,7 @@ export function getMapaTable(params) {
  */
 export function getParalelosByMateria(codmat, gestion) {
     return request({
-        url: `/api/sys/mapa/paralelos/${codmat}`,
+        url: `/sys/mapa/paralelos/${codmat}`,
         method: 'get',
         params: { gestion }
     });
@@ -34,7 +34,7 @@ export function getParalelosByMateria(codmat, gestion) {
  */
 export function editMapa(data) {
     return request({
-        url: '/api/sys/mapa/edit',
+        url: '/sys/mapa/edit',
         method: 'post',
         data
     });
@@ -49,7 +49,7 @@ export function editMapa(data) {
  */
 export function delMapa(codmat, codpar, gestion) {
     return request({
-        url: '/api/sys/mapa/del',
+        url: '/sys/mapa/del',
         method: 'delete',
         params: { codmat, codpar, gestion }
     });

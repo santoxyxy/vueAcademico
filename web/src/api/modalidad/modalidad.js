@@ -5,7 +5,7 @@ import request from '@/utils/request'
  */
 export function getModalidadList(blurry) {
   return request({
-    url: '/api/sys/modalidad/list',
+    url: '/sys/modalidad/list',
     method: 'get',
     params: { blurry }
   })
@@ -16,7 +16,7 @@ export function getModalidadList(blurry) {
  */
 export function queryModalidadTable(params) {
   return request({
-    url: '/api/sys/modalidad/table',
+    url: '/sys/modalidad/table',
     method: 'get',
     params // { page, size, blurry }
   })
@@ -27,7 +27,7 @@ export function queryModalidadTable(params) {
  */
 export function editModalidad(data) {
   return request({
-    url: '/api/sys/modalidad/edit',
+    url: '/sys/modalidad/edit',
     method: 'post',
     data
   })
@@ -38,7 +38,7 @@ export function editModalidad(data) {
  */
 export function delModalidad(id) {
   return request({
-    url: '/api/sys/modalidad/del',
+    url: '/sys/modalidad/del',
     method: 'delete',
     params: { id }
   })

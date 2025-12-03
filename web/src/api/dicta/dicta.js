@@ -5,7 +5,7 @@ import request from '@/utils/request'
  */
 export function queryDictaTable(params) {
   return request({
-    url: '/api/sys/dicta/table',
+    url: '/sys/dicta/table',
     method: 'get',
     params // { page, size, blurry, gestion, codmat, codn }
   })
@@ -16,7 +16,7 @@ export function queryDictaTable(params) {
  */
 export function getMateriasByDocente(ids, gestion) {
   return request({
-    url: `/api/sys/dicta/docente/${ids}`,
+    url: `/sys/dicta/docente/${ids}`,
     method: 'get',
     params: { gestion }
   })
@@ -27,7 +27,7 @@ export function getMateriasByDocente(ids, gestion) {
  */
 export function getDocentesByMateria(codmat, gestion) {
   return request({
-    url: `/api/sys/dicta/materia/${codmat}`,
+    url: `/sys/dicta/materia/${codmat}`,
     method: 'get',
     params: { gestion }
   })
@@ -38,7 +38,7 @@ export function getDocentesByMateria(codmat, gestion) {
  */
 export function editDicta(data) {
   return request({
-    url: '/api/sys/dicta/edit',
+    url: '/sys/dicta/edit',
     method: 'post',
     data
   })
@@ -49,7 +49,7 @@ export function editDicta(data) {
  */
 export function delDicta(params) {
   return request({
-    url: '/api/sys/dicta/del',
+    url: '/sys/dicta/del',
     method: 'delete',
     params // { codpar, codp, codmat, gestion }
   })

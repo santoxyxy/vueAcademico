@@ -8,7 +8,7 @@ import request from "../../utils/request";
 export function getClientesList(params){
     return request({
         //url: '/api/sys/clientes/list',
-        url: '/api/sys/clientes/table',
+        url: '/sys/clientes/table',
         method: 'get',
         params
     })
@@ -21,7 +21,7 @@ export function getClientesList(params){
  */
 export function delCliente(data) {
     return request({
-        url: '/api/sys/clientes/delete', // <--- Asegúrate de que esta URL sea la correcta para tu backend
+        url: '/sys/clientes/delete', // <--- Asegúrate de que esta URL sea la correcta para tu backend
         method: 'post', // Método común para eliminación
         data
     });
