@@ -1,54 +1,64 @@
 <template>
-  <div>
-    <template v-for="(menu, menuIndex) in props.menuData">
-      <el-sub-menu :key="menuIndex" :index="menu.name" v-if="menu.children">
-        <template #title>
-          <i :class="menu.icon"></i>
-          <span slot="title">{{menu.name}}</span>
-        </template>
-        <menu-tree :menuData="menu.children"></menu-tree>
-      </el-sub-menu>
-      <el-menu-item v-else :key="menu.name + menuIndex" :index="menu.name"
-                    :route="menu.path"
-                    @click="openTab(menu.name, menu.path)">
+  <template v-for="menu in menuData" :key="menu.id">
+    <!-- Si tiene hijos, es un submenú -->
+    <el-sub-menu 
+      v-if="menu.children && menu.children.length > 0" 
+      :index="menu.path"
+    >
+      <template #title>
         <i :class="menu.icon"></i>
-        {{menu.name}}
-      </el-menu-item>
-    </template>
-  </div>
+        <span>{{ menu.name }}</span>
+      </template>
+
+      <!-- Recursión para hijos -->
+      <menu-tree :menu-data="menu.children"></menu-tree>
+    </el-sub-menu>
+
+    <!-- Si no tiene hijos, es un item simple -->
+    <el-menu-item 
+      v-else
+      :index="menu.path"
+      :route="menu.path"
+      @click="handleMenuClick(menu)"
+    >
+      <i :class="menu.icon"></i>
+      <template #title>{{ menu.name }}</template>
+    </el-menu-item>
+  </template>
 </template>
 
 <script setup>
-import {useStore} from "../store";
+import { useRouter } from 'vue-router';
+import { useStore } from '../store';
 
+// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   menuData: {
-    type: Array
+    type: Array,
+    required: true,
+    default: () => []
   }
-})
+});
 
-const store = useStore()
+const router = useRouter();
+const store = useStore();
 
-const openTab = (name, path) => {
-  //  Agregar el menú actualmente abierto a la lista abierta
-  store.addTabAction({name: name, path: path})
-  //  Cambiar el menú activo al menú seleccionado
-  store.activeIndexAction(name)
-}
+const handleMenuClick = (menu) => {
+  console.log('🔖 Click en menú:', menu);
+  
+  // Agregar tab al store
+  store.addTabAction({ 
+    name: menu.name, 
+    path: menu.path 
+  });
+  
+  // Actualizar índice activo
+  store.activeIndexAction(menu.name);
+  
+  // Navegar
+  router.push({ path: menu.path });
+};
 </script>
 
 <style scoped>
-.el-menu{
-  height: 100%;
-}
-/*Dado que la etiqueta <el-menu> de element-ui espera anidar <el-menu-item>, <el-submenu>,
-Uno de <el-menu-item-group>, pero tiene un <div> anidado, por lo que el texto no se puede ocultar cuando se pliega*/
-/*texto oculto*/
-.el-menu--collapse  .el-submenu__title span{
-  display: none;
-}
-/*Ocultar > */
-.el-menu--collapse  .el-submenu__title .el-submenu__icon-arrow{
-  display: none;
-}
 </style>

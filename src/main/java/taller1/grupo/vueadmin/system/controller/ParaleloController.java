@@ -12,12 +12,6 @@ import taller1.grupo.vueadmin.system.entity.dto.ParaleloDto;
 import taller1.grupo.vueadmin.system.entity.dto.QueryDto;
 import taller1.grupo.vueadmin.system.service.ParaleloService;
 
-/**
- * Controlador de Paralelos
- * Endpoints para CRUD de paralelos
- * @author Tu nombre
- * @date 2025-01-01
- */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/sys")
@@ -25,10 +19,6 @@ public class ParaleloController extends ResultUtil {
 
     private final ParaleloService paraleloService;
 
-    /**
-     * Obtener lista de paralelos
-     * GET /sys/paralelo/list
-     */
     @Log("Obtener lista de paralelos")
     @GetMapping("/paralelo/list")
     public ResponseEntity<Object> getParaleloList(String blurry) {
@@ -39,10 +29,6 @@ public class ParaleloController extends ResultUtil {
         }
     }
 
-    /**
-     * Consultar tabla de paralelos con paginación
-     * GET /sys/paralelo/table
-     */
     @Log("Consultar tabla de paralelos")
     @GetMapping("/paralelo/table")
     public ResponseEntity<Object> queryParaleloTable(QueryDto queryDto) {
@@ -53,16 +39,13 @@ public class ParaleloController extends ResultUtil {
         }
     }
 
-    /**
-     * Editar o crear paralelo
-     * POST /sys/paralelo/edit
-     */
     @Log("Editar paralelo")
     @PostMapping("/paralelo/edit")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_DOCENTE')")
     public ResponseEntity<Object> editParalelo(@RequestBody ParaleloDto paraleloDto) {
         try {
-            String str = StringUtil.getEditType(paraleloDto.getCodp());
+            String str = StringUtil.getEditType(paraleloDto.getCodp() != null ? 
+                         Long.valueOf(paraleloDto.getCodp()) : null);
             paraleloService.editParalelo(paraleloDto);
             return success(true, str);
         } catch (BadRequestException e) {
@@ -70,16 +53,12 @@ public class ParaleloController extends ResultUtil {
         }
     }
 
-    /**
-     * Eliminar paralelo
-     * DELETE /sys/paralelo/del
-     */
     @Log("Eliminar paralelo")
     @DeleteMapping("/paralelo/del")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Object> delParalelo(Long id) {
+    public ResponseEntity<Object> delParalelo(@RequestParam Integer id) {
         try {
-            paraleloService.delParalelo(id);
+            paraleloService.delParalelo(Long.valueOf(id));
             return success(true, "Eliminar exitosamente");
         } catch (BadRequestException e) {
             return fail(false, e.getMsg());

@@ -12,12 +12,6 @@ import taller1.grupo.vueadmin.system.entity.dto.ItemsDto;
 import taller1.grupo.vueadmin.system.entity.dto.QueryDto;
 import taller1.grupo.vueadmin.system.service.ItemsService;
 
-/**
- * Controlador de Items
- * Endpoints para CRUD de ítems de evaluación
- * @author Tu nombre
- * @date 2025-01-01
- */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/sys")
@@ -25,10 +19,6 @@ public class ItemsController extends ResultUtil {
 
     private final ItemsService itemsService;
 
-    /**
-     * Obtener lista de ítems
-     * GET /sys/items/list
-     */
     @Log("Obtener lista de ítems")
     @GetMapping("/items/list")
     public ResponseEntity<Object> getItemsList(String blurry) {
@@ -39,10 +29,6 @@ public class ItemsController extends ResultUtil {
         }
     }
 
-    /**
-     * Consultar tabla de ítems con paginación
-     * GET /sys/items/table
-     */
     @Log("Consultar tabla de ítems")
     @GetMapping("/items/table")
     public ResponseEntity<Object> queryItemsTable(QueryDto queryDto) {
@@ -53,10 +39,6 @@ public class ItemsController extends ResultUtil {
         }
     }
 
-    /**
-     * Editar o crear ítem
-     * POST /sys/items/edit
-     */
     @Log("Editar ítem")
     @PostMapping("/items/edit")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_DOCENTE')")
@@ -71,14 +53,10 @@ public class ItemsController extends ResultUtil {
         }
     }
 
-    /**
-     * Eliminar ítem
-     * DELETE /sys/items/del
-     */
     @Log("Eliminar ítem")
     @DeleteMapping("/items/del")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Object> delItems(Integer id) {
+    public ResponseEntity<Object> delItems(@RequestParam Integer id) {
         try {
             itemsService.delItems(id);
             return success(true, "Eliminar exitosamente");

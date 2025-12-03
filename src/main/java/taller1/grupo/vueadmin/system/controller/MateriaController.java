@@ -12,12 +12,6 @@ import taller1.grupo.vueadmin.system.entity.dto.MateriaDto;
 import taller1.grupo.vueadmin.system.entity.dto.QueryDto;
 import taller1.grupo.vueadmin.system.service.MateriaService;
 
-/**
- * Controlador de Materias
- * Endpoints para CRUD de materias académicas
- * @author Tu nombre
- * @date 2025-01-01
- */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/sys")
@@ -25,10 +19,6 @@ public class MateriaController extends ResultUtil {
 
     private final MateriaService materiaService;
 
-    /**
-     * Obtener lista de materias
-     * GET /sys/materia/list
-     */
     @Log("Obtener lista de materias")
     @GetMapping("/materia/list")
     public ResponseEntity<Object> getMateriaList(String blurry) {
@@ -39,10 +29,6 @@ public class MateriaController extends ResultUtil {
         }
     }
 
-    /**
-     * Consultar tabla de materias con paginación
-     * GET /sys/materia/table
-     */
     @Log("Consultar tabla de materias")
     @GetMapping("/materia/table")
     public ResponseEntity<Object> queryMateriaTable(QueryDto queryDto) {
@@ -53,10 +39,6 @@ public class MateriaController extends ResultUtil {
         }
     }
 
-    /**
-     * Obtener materia por código
-     * GET /sys/materia/{codmat}
-     */
     @Log("Obtener materia por código")
     @GetMapping("/materia/{codmat}")
     public ResponseEntity<Object> getMateria(@PathVariable String codmat) {
@@ -67,21 +49,13 @@ public class MateriaController extends ResultUtil {
         }
     }
 
-    /**
-     * Editar o crear materia
-     * POST /sys/materia/edit
-     */
     @Log("Editar materia")
     @PostMapping("/materia/edit")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_DOCENTE')")
     public ResponseEntity<Object> editMateria(@RequestBody MateriaDto materiaDto) {
         try {
-            String str = materiaDto.getCodmat() != null && 
-                         materiaService.getMateriaList(null)
-                            .stream()
-                            .anyMatch(m -> m.getCodmat().equals(materiaDto.getCodmat())) 
-                         ? "Editado con éxito" 
-                         : "Agregado Exitosamente";
+            // Usa el servicio para verificar si existe, no hagas la llamada aquí
+            String str = StringUtil.getEditType(materiaDto.getCodmat() != null ? 1L : null);
             materiaService.editMateria(materiaDto);
             return success(true, str);
         } catch (BadRequestException e) {
@@ -89,14 +63,10 @@ public class MateriaController extends ResultUtil {
         }
     }
 
-    /**
-     * Eliminar materia
-     * DELETE /sys/materia/del
-     */
     @Log("Eliminar materia")
     @DeleteMapping("/materia/del")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Object> delMateria(String codmat) {
+    public ResponseEntity<Object> delMateria(@RequestParam String codmat) {
         try {
             materiaService.delMateria(codmat);
             return success(true, "Eliminar exitosamente");

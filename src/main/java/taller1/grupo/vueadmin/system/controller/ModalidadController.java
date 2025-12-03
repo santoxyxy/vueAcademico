@@ -12,12 +12,6 @@ import taller1.grupo.vueadmin.system.entity.dto.ModalidadDto;
 import taller1.grupo.vueadmin.system.entity.dto.QueryDto;
 import taller1.grupo.vueadmin.system.service.ModalidadService;
 
-/**
- * Controlador de Modalidad
- * Endpoints para CRUD de modalidades académicas
- * @author Tu nombre
- * @date 2025-01-01
- */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/sys")
@@ -25,10 +19,6 @@ public class ModalidadController extends ResultUtil {
 
     private final ModalidadService modalidadService;
 
-    /**
-     * Obtener lista de modalidades
-     * GET /sys/modalidad/list
-     */
     @Log("Obtener lista de modalidades")
     @GetMapping("/modalidad/list")
     public ResponseEntity<Object> getModalidadList(String blurry) {
@@ -39,10 +29,6 @@ public class ModalidadController extends ResultUtil {
         }
     }
 
-    /**
-     * Consultar tabla de modalidades con paginación
-     * GET /sys/modalidad/table
-     */
     @Log("Consultar tabla de modalidades")
     @GetMapping("/modalidad/table")
     public ResponseEntity<Object> queryModalidadTable(QueryDto queryDto) {
@@ -53,10 +39,6 @@ public class ModalidadController extends ResultUtil {
         }
     }
 
-    /**
-     * Editar o crear modalidad
-     * POST /sys/modalidad/edit
-     */
     @Log("Editar modalidad")
     @PostMapping("/modalidad/edit")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_DOCENTE')")
@@ -71,14 +53,10 @@ public class ModalidadController extends ResultUtil {
         }
     }
 
-    /**
-     * Eliminar modalidad
-     * DELETE /sys/modalidad/del
-     */
     @Log("Eliminar modalidad")
     @DeleteMapping("/modalidad/del")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Object> delModalidad(Integer id) {
+    public ResponseEntity<Object> delModalidad(@RequestParam Integer id) {
         try {
             modalidadService.delModalidad(id);
             return success(true, "Eliminar exitosamente");

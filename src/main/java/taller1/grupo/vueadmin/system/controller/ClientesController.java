@@ -1,8 +1,8 @@
 package taller1.grupo.vueadmin.system.controller;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import taller1.grupo.vueadmin.common.exception.BadRequestException;
 import taller1.grupo.vueadmin.common.utils.ResultUtil;
@@ -11,8 +11,6 @@ import taller1.grupo.vueadmin.logs.annotation.Log;
 import taller1.grupo.vueadmin.system.entity.dto.QueryDto;
 import taller1.grupo.vueadmin.system.entity.dto.ClientesDto;
 import taller1.grupo.vueadmin.system.service.ClientesService;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,7 +41,7 @@ public class ClientesController extends ResultUtil {
         }
     }
 
-    @Log("Editar clientes")
+     @Log("Editar clientes")
     @PostMapping("/clientes/edit")
     public ResponseEntity<Object> editClientes(@RequestBody ClientesDto clientesDto) {
         try {
@@ -64,4 +62,16 @@ public class ClientesController extends ResultUtil {
         }
     }
 
+
+    @Log("Eliminar cliente")
+    @DeleteMapping("/clientes/del")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Object> delClientes(@RequestParam Long id) {
+        try {
+            clientesService.delClientes(id);
+            return success(true, "Eliminar exitosamente");
+        } catch (BadRequestException e) {
+            return fail(false, e.getMsg());
+        }
+    }
 }

@@ -7,7 +7,6 @@ import request from "../../utils/request";
  */
 export function getClientesList(params){
     return request({
-        //url: '/api/sys/clientes/list',
         url: '/sys/clientes/table',
         method: 'get',
         params
@@ -16,13 +15,26 @@ export function getClientesList(params){
 
 /**
  * Eliminar registro de cliente
+ * @param id
+ * @returns {AxiosPromise}
+ */
+export function delCliente(id) {
+    return request({
+        url: '/sys/clientes/del',
+        method: 'delete',
+        params: { id }
+    });
+}
+
+/**
+ * Editar cliente
  * @param data
  * @returns {AxiosPromise}
  */
-export function delCliente(data) {
+export function editCliente(data) {
     return request({
-        url: '/sys/clientes/delete', // <--- Asegúrate de que esta URL sea la correcta para tu backend
-        method: 'post', // Método común para eliminación
+        url: '/sys/clientes/edit',
+        method: 'post',
         data
     });
 }

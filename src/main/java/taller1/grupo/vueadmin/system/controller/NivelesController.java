@@ -12,12 +12,6 @@ import taller1.grupo.vueadmin.system.entity.dto.NivelesDto;
 import taller1.grupo.vueadmin.system.entity.dto.QueryDto;
 import taller1.grupo.vueadmin.system.service.NivelesService;
 
-/**
- * Controlador de Niveles
- * Endpoints para CRUD de niveles académicos
- * @author Tu nombre
- * @date 2025-01-01
- */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/sys")
@@ -25,10 +19,6 @@ public class NivelesController extends ResultUtil {
 
     private final NivelesService nivelesService;
 
-    /**
-     * Obtener lista de niveles
-     * GET /sys/niveles/list
-     */
     @Log("Obtener lista de niveles")
     @GetMapping("/niveles/list")
     public ResponseEntity<Object> getNivelesList(String blurry) {
@@ -39,10 +29,6 @@ public class NivelesController extends ResultUtil {
         }
     }
 
-    /**
-     * Consultar tabla de niveles con paginación
-     * GET /sys/niveles/table
-     */
     @Log("Consultar tabla de niveles")
     @GetMapping("/niveles/table")
     public ResponseEntity<Object> queryNivelesTable(QueryDto queryDto) {
@@ -53,10 +39,6 @@ public class NivelesController extends ResultUtil {
         }
     }
 
-    /**
-     * Editar o crear nivel
-     * POST /sys/niveles/edit
-     */
     @Log("Editar nivel")
     @PostMapping("/niveles/edit")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_DOCENTE')")
@@ -71,14 +53,10 @@ public class NivelesController extends ResultUtil {
         }
     }
 
-    /**
-     * Eliminar nivel
-     * DELETE /sys/niveles/del
-     */
     @Log("Eliminar nivel")
     @DeleteMapping("/niveles/del")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Object> delNiveles(Integer id) {
+    public ResponseEntity<Object> delNiveles(@RequestParam Integer id) {
         try {
             nivelesService.delNiveles(id);
             return success(true, "Eliminar exitosamente");

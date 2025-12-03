@@ -2,24 +2,38 @@ import request from '@/utils/request'
 
 export function pagePersonas(params) {
   return request({
-    url: '/api/sys/personal/table',
+    url: '/sys/personal/table', // ✅ CORREGIDO: removido /api
     method: 'get',
-    params // { page, size, blurry }
+    params
   })
 }
 
 export function getPersona(idusuario) {
-  return request({ url: `/api/personal/${idusuario}`, method: 'get' })
+  return request({ 
+    url: `/sys/personal/${idusuario}`, // ✅ CORREGIDO
+    method: 'get' 
+  })
 }
 
 export function createPersona(data) {
-  return request({ url: '/api/personal', method: 'post', data })
+  return request({ 
+    url: '/sys/personal', // ✅ CORREGIDO
+    method: 'post', 
+    data 
+  })
 }
 
 export function updatePersona(idusuario, data) {
-  return request({ url: `/api/personal/${idusuario}`, method: 'put', data })
+  return request({ 
+    url: `/sys/personal/${idusuario}`, // ✅ CORREGIDO
+    method: 'put', 
+    data 
+  })
 }
 
 export function deletePersona(idusuario) {
-  return request({ url: `/api/personal/${idusuario}`, method: 'delete' })
+  return request({ 
+    url: `/sys/personal/${idusuario}`, // ✅ CORREGIDO
+    method: 'delete' 
+  })
 }

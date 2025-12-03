@@ -15,53 +15,57 @@ import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/sys")
-///api/sys/personal/table
-public class PersonalController {
+public class PersonalController extends ResultUtil {
 
-  @Resource private PersonalService personalService;
-
-  /*
-   * @Log("Consultar lista de clientes dto")
-    @GetMapping("/clientes/table")
-    public ResponseEntity<Object> queryClientesTable(QueryDto queryDto) {
-        try {
-            return success(true, clientesService.queryClientesTable(queryDto));
-        } catch (BadRequestException e) {
-            return fail(false, e.getMsg());
-        }
-    }
-   */
+  @Resource 
+  private PersonalService personalService;
 
   // Página de Personas (JOIN personal + datos)
   @GetMapping("/personal/table")
   public ResponseEntity<Object> queryPersonalTable(QueryDto queryDto) {
         try {
-            return taller1.grupo.vueadmin.common.utils.ResultUtil.success(true, personalService.queryPersonalTable(queryDto));
+            return success(true, personalService.queryPersonalTable(queryDto));
         } catch (BadRequestException e) {
-            return taller1.grupo.vueadmin.common.utils.ResultUtil.fail(false, e.getMsg());
+            return fail(false, e.getMsg());
         }
     }
 
-  @GetMapping("/{idusuario}")
-  public PersonaVO get(@PathVariable Long idusuario) {
-    return personalService.getByUserId(idusuario);
+  @GetMapping("/personal/{idusuario}")
+  public ResponseEntity<Object> get(@PathVariable Long idusuario) {
+    try {
+      return success(true, personalService.getByUserId(idusuario));
+    } catch (BadRequestException e) {
+      return fail(false, e.getMsg());
+    }
   }
 
-  @PostMapping
-  public PersonaVO create(@Valid @RequestBody PersonaUpsertDTO dto) {
-    return personalService.create(dto);
+  @PostMapping("/personal")
+  public ResponseEntity<Object> create(@Valid @RequestBody PersonaUpsertDTO dto) {
+    try {
+      return success(true, personalService.create(dto));
+    } catch (BadRequestException e) {
+      return fail(false, e.getMsg());
+    }
   }
 
-  @PutMapping("/{idusuario}")
-  public PersonaVO update(@PathVariable Long idusuario,
+  @PutMapping("/personal/{idusuario}")
+  public ResponseEntity<Object> update(@PathVariable Long idusuario,
                           @Valid @RequestBody PersonaUpsertDTO dto) {
-    dto.setIdusuario(idusuario);
-    return personalService.update(idusuario, dto);
+    try {
+      dto.setIdusuario(idusuario);
+      return success(true, personalService.update(idusuario, dto));
+    } catch (BadRequestException e) {
+      return fail(false, e.getMsg());
+    }
   }
 
-  @DeleteMapping("/{idusuario}")
-  public void delete(@PathVariable Long idusuario) {
-    personalService.delete(idusuario);
+  @DeleteMapping("/personal/{idusuario}")
+  public ResponseEntity<Object> delete(@PathVariable Long idusuario) {
+    try {
+      personalService.delete(idusuario);
+      return success(true, "Eliminar exitosamente");
+    } catch (BadRequestException e) {
+      return fail(false, e.getMsg());
+    }
   }
 }
-

@@ -12,12 +12,6 @@ import taller1.grupo.vueadmin.system.entity.dto.DmodalidadDto;
 import taller1.grupo.vueadmin.system.entity.dto.QueryDto;
 import taller1.grupo.vueadmin.system.service.DmodalidadService;
 
-/**
- * Controlador de DMODALIDAD
- * Endpoints para gestionar detalles de modalidades
- * @author Tu nombre
- * @date 2025-01-01
- */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/sys")
@@ -25,10 +19,6 @@ public class DmodalidadController extends ResultUtil {
 
     private final DmodalidadService dmodalidadService;
 
-    /**
-     * Obtener lista de detalles de modalidades
-     * GET /sys/dmodalidad/list
-     */
     @Log("Obtener lista de detalles de modalidades")
     @GetMapping("/dmodalidad/list")
     public ResponseEntity<Object> getDmodalidadList(String blurry) {
@@ -39,10 +29,6 @@ public class DmodalidadController extends ResultUtil {
         }
     }
 
-    /**
-     * Consultar tabla de detalles con paginación
-     * GET /sys/dmodalidad/table
-     */
     @Log("Consultar tabla de detalles de modalidades")
     @GetMapping("/dmodalidad/table")
     public ResponseEntity<Object> queryDmodalidadTable(QueryDto queryDto) {
@@ -53,10 +39,6 @@ public class DmodalidadController extends ResultUtil {
         }
     }
 
-    /**
-     * Obtener detalles por modalidad padre
-     * GET /sys/dmodalidad/modalidad/{codm}
-     */
     @Log("Obtener detalles por modalidad")
     @GetMapping("/dmodalidad/modalidad/{codm}")
     public ResponseEntity<Object> getDetallesByModalidad(@PathVariable Integer codm) {
@@ -67,10 +49,6 @@ public class DmodalidadController extends ResultUtil {
         }
     }
 
-    /**
-     * Editar o crear detalle de modalidad
-     * POST /sys/dmodalidad/edit
-     */
     @Log("Editar detalle de modalidad")
     @PostMapping("/dmodalidad/edit")
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_DOCENTE')")
@@ -85,14 +63,10 @@ public class DmodalidadController extends ResultUtil {
         }
     }
 
-    /**
-     * Eliminar detalle de modalidad
-     * DELETE /sys/dmodalidad/del
-     */
     @Log("Eliminar detalle de modalidad")
     @DeleteMapping("/dmodalidad/del")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Object> delDmodalidad(Integer id) {
+    public ResponseEntity<Object> delDmodalidad(@RequestParam Integer id) {
         try {
             dmodalidadService.delDmodalidad(id);
             return success(true, "Eliminar exitosamente");

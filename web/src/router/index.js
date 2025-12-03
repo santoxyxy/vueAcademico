@@ -19,6 +19,7 @@ const ROUTE_CORRECTIONS = {
   '/modalidad': '/configuracion/modalidad',
   '/dmodalidad': '/configuracion/dmodalidad',
   '/itemat': '/configuracion/itemat',
+  '/clientes': '/configuracion/clientes',
   
   // Gestión Académica
   '/menu': '/gestion-academica/general',
@@ -30,7 +31,6 @@ const ROUTE_CORRECTIONS = {
   '/notas': '/gestion-academica/notas',
   
   // Usuarios
-  '/clientes': '/usuarios/clientes',
   '/usuario': '/usuarios/gestion',
   '/user': '/usuarios/sistema',
   
@@ -78,7 +78,7 @@ router.beforeEach((to, from, next) => {
   // ─────────────────────────────────────────────────
   // CASO 1: Usuario autenticado
   // ─────────────────────────────────────────────────
-  if (store.token) {
+   if (store.token) {
     
     // Redirigir de login a home si ya está autenticado
     if (to.path === '/login') {
@@ -94,25 +94,7 @@ router.beforeEach((to, from, next) => {
       return;
     }
 
-    // ─────────────────────────────────────────────────
-    // VERIFICAR SI LA RUTA EXISTE
-    // ─────────────────────────────────────────────────
-    if (!hashRoute(to)) {
-      console.log('⚠️ Ruta no encontrada, agregando rutas dinámicas...');
-      addRoute();
-      
-      // Verificar nuevamente después de agregar rutas
-      if (hashRoute(to)) {
-        console.log('✅ Ruta encontrada después de agregar');
-        next({ ...to, replace: true });
-      } else {
-        console.log('❌ Ruta no existe, redirigiendo a 404');
-        next({ path: '/404' });
-      }
-      return;
-    }
-
-    // Ruta válida, continuar
+    // Permitir navegación
     next();
     return;
   }
@@ -147,7 +129,12 @@ export function loadMenus(next, to) {
         // Agregar rutas dinámicas
         addRoute();
         
-        next({ ...to, replace: true });
+        // Si está intentando ir a home, permitirlo
+        if (to.path === '/home' || to.path === '/') {
+          next({ path: '/home' });
+        } else {
+          next({ ...to, replace: true });
+        }
       } else {
         errorMsg('No se encontraron menús para el usuario');
         next({ path: '/login' });
@@ -169,7 +156,12 @@ function normalizeMenuPaths(menus) {
     
     // Corregir ruta principal
     if (normalizedMenu.path) {
+      const originalPath = normalizedMenu.path;
       normalizedMenu.path = normalizeRoute(normalizedMenu.path);
+      
+      if (originalPath !== normalizedMenu.path) {
+        console.log(`🔄 Ruta corregida: ${originalPath} → ${normalizedMenu.path}`);
+      }
     }
     
     // Corregir rutas de hijos recursivamente
@@ -179,21 +171,6 @@ function normalizeMenuPaths(menus) {
     
     return normalizedMenu;
   });
-}
-
-// =====================================================
-// VERIFICAR SI UNA RUTA EXISTE
-// =====================================================
-export function hashRoute(to) {
-  const found = router.getRoutes().find(route => route.path === to.path);
-  const exists = !!found;
-  
-  if (!exists) {
-    console.log('🔍 Ruta no encontrada:', to.path);
-    console.log('📝 Rutas disponibles:', router.getRoutes().map(r => r.path));
-  }
-  
-  return exists;
 }
 
 // =====================================================
@@ -210,45 +187,57 @@ export function addRoute() {
 
   console.log('➕ Agregando rutas dinámicas:', routers);
 
-  routers.forEach(item => {
-    if (!item.path) {
-      console.warn('⚠️ Ruta sin path:', item);
-      return;
-    }
-
-    try {
-      // Normalizar el path del componente
-      let componentPath = item.component;
-      
-      if (componentPath) {
-        // Asegurar extensión .vue
-        if (!componentPath.endsWith('.vue')) {
-          componentPath = componentPath + '.vue';
-        }
-
-        // Remover prefijo /views/ si existe
-        componentPath = componentPath.replace(/^\/views\//, '');
-
-        console.log(`📄 Registrando ruta: ${item.path} -> ${componentPath}`);
-
-        router.addRoute('LayoutView', {
-          path: item.path,
-          name: item.name || item.path.replace(/\//g, '-'),
-          component: () => import(`@/views/${componentPath}`),
-          meta: {
-            title: item.title || item.name,
-            icon: item.icon,
-            permission: item.permission
-          }
-        });
+  // Función recursiva para procesar menús
+  function processMenus(menuList) {
+    menuList.forEach(item => {
+      if (!item.path) {
+        console.warn('⚠️ Ruta sin path:', item);
+        return;
       }
-    } catch (error) {
-      console.error(`❌ Error registrando ruta ${item.path}:`, error);
-    }
-  });
+
+      // Si tiene componente, registrar la ruta
+      if (item.component) {
+        try {
+          let componentPath = item.component;
+          
+          // Asegurar extensión .vue
+          if (!componentPath.endsWith('.vue')) {
+            componentPath = componentPath + '.vue';
+          }
+
+          // Remover prefijo /views/ si existe
+          componentPath = componentPath.replace(/^\/views\//, '');
+
+          console.log(`📄 Registrando ruta: ${item.path} -> ${componentPath}`);
+
+          router.addRoute('LayoutView', {
+            path: item.path,
+            name: item.name || item.path.replace(/\//g, '-'),
+            component: () => import(`@/views/${componentPath}`),
+            meta: {
+              title: item.title || item.name,
+              icon: item.icon,
+              permission: item.permission
+            }
+          });
+        } catch (error) {
+          console.error(`❌ Error registrando ruta ${item.path}:`, error);
+        }
+      }
+
+      // Procesar hijos recursivamente
+      if (item.children && item.children.length > 0) {
+        processMenus(item.children);
+      }
+    });
+  }
+
+  // Procesar todos los menús
+  processMenus(routers);
 
   console.log('✅ Rutas dinámicas agregadas');
   console.log('📋 Total de rutas:', router.getRoutes().length);
+  console.log('📋 Rutas registradas:', router.getRoutes().map(r => r.path));
 }
 
 // =====================================================
