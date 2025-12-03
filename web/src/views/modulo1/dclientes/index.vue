@@ -1,113 +1,109 @@
 <template>
-  <q-layout view="hHh lpR fFf">
-     <q-page-container>
-      <div id="q-app" style="min-height: 100vh;">
-<div class="q-pa-md full-width full-height">
-        <q-table
-         class="my-sticky-header-column-table"
-      flat bordered
-          title="Detalle de Clientes"
-          color="primary"
-          
-          table-class="text-grey-8"
-          table-header-class="text-brown"
-        
-          ref="tableRef"
-          :rows="state.tableData"
-          :columns="columns"
-          row-key="idcliente"
-          virtual-scroll
-          :loading="loading"
-          :filter="state.blurry"
-          binary-state-sort
-          :visible-columns="visibleColumns"
-          :rows-per-page-options="[0]"
-        >
-          <template v-slot:top-left>
-            <q-btn
-              color="primary"
-              icon="add"
-              label="Nuevo Cliente"
-              @click="onEdit()"
-            />
-            
-          </template>
+  <div class="app-container">
 
-          <template v-slot:top-right>
-            <q-input
-              borderless
-              dense
-              debounce="300"
-              v-model="state.blurry"
-              placeholder="Buscar"
-            >
-              <template v-slot:append>
-                <q-icon name="search" @click="getModulo1DClientesTableFun" />
-              </template>
-            </q-input>
-          </template>
+    <!-- Barra superior -->
+    <div class="toolbar">
+      <el-button type="primary" icon="Plus" @click="onEdit()">Nuevo Cliente</el-button>
 
-          <template v-slot:body-cell-actions="props">
-            <q-td :props="props">
-              <q-btn
-                @click="onEdit(props.row)"
-                fab-mini
-                dense
-                square
-                outline
-                icon="mode_edit"
-                color="primary"
-                aria-label="Editar"
-                class="q-mr-sm"
-              />
-              <q-btn
-                @click="onPedidos(props.row)"
-                fab-mini
-                dense
-                square
-                outline
-                icon="table_view"
-                color="negative"
-                aria-label="Detalle"
-              />
-            </q-td>
-          </template>
-        </q-table>
-    </div>    
-         <pagination 
-    v-model:current="state.current" 
-    v-model:size="state.size" 
-    v-model:total="state.total" 
-    @get-list="getModulo1DClientesTableFun">
-  </pagination>
+      <el-input
+        v-model="state.blurry"
+        placeholder="Buscar"
+        clearable
+        @keyup.enter="getModulo1DClientesTableFun"
+        class="search-input"
+      >
+        <template #append>
+          <el-button icon="Search" @click="getModulo1DClientesTableFun" />
+        </template>
+      </el-input>
+    </div>
 
-    
-      </div>
-
-      <!-- Componente de pedidos -->
-      <pedidoDclientes
-        v-model="pedidoDialogVisible"
-        :cliente-obj="state.selectedCliente"
-        @close="pedidoDialogVisible = false"
+    <!-- TABLA -->
+    <el-table
+      v-loading="loading"
+      :data="state.tableData"
+      border
+      style="width: 100%"
+      height="75vh"
+    >
+      <el-table-column
+        prop="idcliente"
+        label="ID Cliente"
+        width="120"
+        align="center"
+        sortable
+        fixed="left"
       />
 
-      <!-- Componente de edición -->
-      <editDClientes
-        v-model="clienteDialogVisible"
-        :cliente-obj="state.selectedCliente"
-        @close="onDialogClose"
+      <el-table-column
+        prop="nombre"
+        label="Nombre"
+        align="left"
+        sortable
       />
-    </q-page-container>
-  </q-layout>
+
+      <el-table-column
+        label="Acciones"
+        align="center"
+        width="180"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            size="small"
+            type="primary"
+            link
+            icon="Edit"
+            @click="onEdit(row)"
+          >
+            Editar
+          </el-button>
+
+          <el-button
+            size="small"
+            type="danger"
+            link
+            icon="Document"
+            @click="onPedidos(row)"
+          >
+            Detalle
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <!-- PAGINACIÓN -->
+    <el-pagination
+      background
+      layout="prev, pager, next, jumper"
+      :page-size="state.size"
+      :current-page="state.current"
+      :total="state.total"
+      @current-change="(page)=>{state.current=page; getModulo1DClientesTableFun()}"
+    />
+
+    <!-- MODAL DE PEDIDOS -->
+    <pedidoDclientes
+      v-model="pedidoDialogVisible"
+      :cliente-obj="state.selectedCliente"
+      @close="pedidoDialogVisible = false"
+    />
+
+    <!-- MODAL DE EDICIÓN -->
+    <editDClientes
+      v-model="clienteDialogVisible"
+      :cliente-obj="state.selectedCliente"
+      @close="onDialogClose"
+    />
+  </div>
 </template>
-
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { getModulo1DClientesTable } from '../../../api/modulo1/modulo1'
 import { errorMsg } from '../../../utils/message'
+
 import pedidoDclientes from './pedidoDclientes.vue'
 import editDClientes from './editDClientes.vue'
-import Pagination from '../../../components/Pagination.vue'
 
 const state = reactive({
   blurry: '',
@@ -119,35 +115,27 @@ const state = reactive({
   selectedCliente: null,
 })
 
-const columns = [
-  { name: 'idcliente', label: 'ID Cliente', align: 'center', field: 'idcliente', sortable: true },
-  { name: 'nombre', label: 'Nombre', align: 'left', field: 'nombre', sortable: true },
-  { name: 'actions', label: 'Acciones', align: 'center', field: 'actions', sortable: false },
-]
-
-const visibleColumns = ref(['idcliente', 'nombre', 'actions'])
 const loading = ref(false)
-// const pagination = ref({ sortBy: 'nombre', descending: false, page: 1, rowsPerPage: 10 })
 const pedidoDialogVisible = ref(false)
 const clienteDialogVisible = ref(false)
 
 // 🔹 Cargar tabla
 const getModulo1DClientesTableFun = () => {
   loading.value = true
+
   const params = {
     blurry: state.blurry,
     size: state.size,
-    currentPage: state.current
+    currentPage: state.current,
   }
+
   getModulo1DClientesTable(params)
     .then((res) => {
       loading.value = false
       if (res.success) {
         state.tableData = res.data.records
         state.total = res.data.total
-      } else {
-        errorMsg(res.msg)
-      }
+      } else errorMsg(res.msg)
     })
     .catch(() => {
       loading.value = false
@@ -164,17 +152,11 @@ const onPedidos = (row) => {
 
 // 🔹 Editar o crear cliente
 const onEdit = (row) => {
-  if (!row) {
-    // Nuevo cliente
-    state.selectedCliente = {}
-  } else {
-    // Editar
-    state.selectedCliente = { ...row }
-  }
+  state.selectedCliente = row ? { ...row } : {}
   clienteDialogVisible.value = true
 }
 
-// 🔹 Al cerrar el diálogo, recargar la tabla
+// 🔹 Al cerrar diálogo, recargar
 const onDialogClose = () => {
   clienteDialogVisible.value = false
   getModulo1DClientesTableFun()
@@ -184,24 +166,29 @@ onMounted(() => {
   getModulo1DClientesTableFun()
 })
 </script>
-<style lang="sass">
-.my-sticky-header-column-table
-  height: 80vh
-  width: 100%
-  max-width: 100%
-  background: white
+<style scoped>
+.app-container {
+  padding: 20px;
+}
 
-  tr th
-    position: sticky
-    z-index: 2
-    background: #00b4ff
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
 
-  thead tr:first-child th
-    top: 0
-    z-index: 3
+.search-input {
+  width: 250px;
+}
 
-  td:first-child, th:first-child
-    position: sticky
-    left: 0
-    background-color: #e0f7ff
+.el-table th {
+  background: #00b4ff !important;
+  color: #fff;
+  font-weight: bold;
+}
+
+.el-table__fixed,
+.el-table__fixed-right {
+  background: #e0f7ff !important;
+}
 </style>

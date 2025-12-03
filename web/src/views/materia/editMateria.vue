@@ -1,192 +1,167 @@
 <template>
-  <el-dialog
-    v-model="dialogVisible"
-    :title="isEdit ? 'Editar Materia' : 'Nueva Materia'"
-    width="600px"
-    @close="handleClose"
-  >
-    <el-form
-      ref="formRef"
-      :model="formData"
-      :rules="rules"
-      label-width="120px"
-      v-loading="loading"
-    >
-      <el-form-item label="Código" prop="codmat">
-        <el-input
-          v-model="formData.codmat"
-          placeholder="Código de la materia (ej: MAT-101)"
-          :disabled="isEdit"
-          maxlength="15"
-        />
-        <el-text size="small" type="info">
-          Máximo 15 caracteres. No se puede modificar una vez creado.
-        </el-text>
-      </el-form-item>
+  <q-dialog v-model="dialogVisible" persistent>
+    <q-card style="min-width: 500px; max-width: 600px;">
+      <q-card-section>
+        <div class="text-h6">{{ isEdit ? 'Editar Materia' : 'Nueva Materia' }}</div>
+      </q-card-section>
 
-      <el-form-item label="Nombre" prop="nombre">
-        <el-input
-          v-model="formData.nombre"
-          placeholder="Nombre de la materia"
-          maxlength="30"
-        />
-      </el-form-item>
-
-      <el-form-item label="Nivel" prop="codn">
-        <el-select
-          v-model="formData.codn"
-          placeholder="Seleccione un nivel"
-          style="width: 100%"
-          filterable
-        >
-          <el-option
-            v-for="nivel in nivelesList"
-            :key="nivel.codn"
-            :label="nivel.nombre"
-            :value="nivel.codn"
+      <q-card-section>
+        <q-form ref="formRef" @submit.prevent="handleSubmit" class="q-gutter-md">
+          <!-- Código -->
+          <q-input
+            v-model="formData.codmat"
+            label="Código"
+            :disable="isEdit"
+            maxlength="15"
+            :rules="[val => !!val || 'El código es obligatorio', val => (val && val.length >=3 && val.length <=15) || 'Debe tener entre 3 y 15 caracteres']"
           />
-        </el-select>
-      </el-form-item>
+          <div class="text-caption text-grey-7">
+            Máximo 15 caracteres. No se puede modificar una vez creado.
+          </div>
 
-      <el-form-item label="Estado" prop="estado">
-        <el-switch
-          v-model="formData.estado"
-          :active-value="1"
-          :inactive-value="0"
-          active-text="Activo"
-          inactive-text="Inactivo"
+          <!-- Nombre -->
+          <q-input
+            v-model="formData.nombre"
+            label="Nombre"
+            maxlength="30"
+            :rules="[val => !!val || 'El nombre es obligatorio', val => (!val || val.length <=30) || 'Máximo 30 caracteres']"
+          />
+
+          <!-- Nivel -->
+          <q-select
+            v-model="formData.codn"
+            label="Nivel"
+            :options="nivelesList.map(n => ({ label: n.nombre, value: n.codn }))"
+            option-label="label"
+            option-value="value"
+            emit-value
+            map-options
+            :rules="[val => !!val || 'Debe seleccionar un nivel']"
+            use-chips
+            clearable
+          />
+
+          <!-- Estado -->
+          <q-toggle
+            v-model="formData.estado"
+            label="Estado"
+            true-value="1"
+            false-value="0"
+            left-label
+            color="primary"
+          >
+            <template v-slot:label>
+              {{ formData.estado === 1 ? 'Activo' : 'Inactivo' }}
+            </template>
+          </q-toggle>
+        </q-form>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Cancelar" color="grey" @click="handleClose" />
+        <q-btn
+          label="Guardar"
+          color="primary"
+          :loading="loading"
+          @click="handleSubmit"
         />
-      </el-form-item>
-    </el-form>
-
-    <template #footer>
-      <el-button @click="handleClose">Cancelar</el-button>
-      <el-button type="primary" @click="handleSubmit" :loading="loading">
-        {{ isEdit ? 'Guardar Cambios' : 'Crear Materia' }}
-      </el-button>
-    </template>
-  </el-dialog>
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue';
-import { ElMessage } from 'element-plus';
-import { editMateria } from '@/api/materia/materia';
-import { getNivelesList } from '@/api/niveles/niveles';
+import { ref, reactive, computed, watch } from 'vue'
+import { editMateria } from '@/api/materia/materia'
+import { getNivelesList } from '@/api/niveles/niveles'
+import { errorMsg, successMsg } from '@/utils/message'
 
 const props = defineProps({
   modelValue: Boolean,
   materiaData: Object
-});
+})
+const emit = defineEmits(['update:modelValue', 'success'])
 
-const emit = defineEmits(['update:modelValue', 'success']);
+const dialogVisible = computed({
+  get: () => props.modelValue,
+  set: val => emit('update:modelValue', val)
+})
 
-// Estado
-const formRef = ref(null);
-const loading = ref(false);
-const nivelesList = ref([]);
+const formRef = ref(null)
+const loading = ref(false)
+const nivelesList = ref([])
 
 const formData = reactive({
   codmat: '',
   nombre: '',
   codn: null,
-  estado: 1
-});
+  estado: '1'
+})
 
-// Reglas de validación
-const rules = {
-  codmat: [
-    { required: true, message: 'El código es obligatorio', trigger: 'blur' },
-    { min: 3, max: 15, message: 'Debe tener entre 3 y 15 caracteres', trigger: 'blur' }
-  ],
-  nombre: [
-    { required: true, message: 'El nombre es obligatorio', trigger: 'blur' },
-    { max: 30, message: 'Máximo 30 caracteres', trigger: 'blur' }
-  ],
-  codn: [
-    { required: true, message: 'Debe seleccionar un nivel', trigger: 'change' }
-  ]
-};
-
-// Computed
-const dialogVisible = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
-});
-
-const isEdit = computed(() => !!props.materiaData?.codmat);
+const isEdit = computed(() => !!props.materiaData?.codmat)
 
 // Cargar niveles
 const loadNiveles = async () => {
   try {
-    const { data } = await getNivelesList();
-    if (data.success) {
-      nivelesList.value = data.data;
-    }
-  } catch (error) {
-    ElMessage.error('Error al cargar niveles: ' + error.message);
+    const res = await getNivelesList()
+    if (res.success) nivelesList.value = res.data
+    else errorMsg(res.msg || 'Error al cargar niveles')
+  } catch (err) {
+    errorMsg(err.message || 'Error al cargar niveles')
   }
-};
+}
 
 // Resetear formulario
 const resetForm = () => {
   if (props.materiaData) {
-    Object.assign(formData, props.materiaData);
+    Object.assign(formData, { ...props.materiaData, estado: String(props.materiaData.estado) })
   } else {
-    Object.assign(formData, {
-      codmat: '',
-      nombre: '',
-      codn: null,
-      estado: 1
-    });
+    Object.assign(formData, { codmat: '', nombre: '', codn: null, estado: '1' })
   }
-  formRef.value?.clearValidate();
-};
+  formRef.value?.resetValidation()
+}
 
 // Enviar formulario
 const handleSubmit = async () => {
-  if (!formRef.value) return;
-
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true;
-      try {
-        const { data } = await editMateria(formData);
-        
-        if (data.success) {
-          ElMessage.success(data.msg || 'Operación exitosa');
-          emit('success');
-          handleClose();
-        } else {
-          ElMessage.error(data.msg || 'Error al guardar');
-        }
-      } catch (error) {
-        ElMessage.error('Error: ' + error.message);
-      } finally {
-        loading.value = false;
+  if (!formRef.value) return
+  formRef.value.validate().then(async valid => {
+    if (!valid) return
+    loading.value = true
+    try {
+      const res = await editMateria({ ...formData, estado: Number(formData.estado) })
+      if (res.success) {
+        successMsg(res.msg || 'Operación exitosa')
+        emit('success')
+        handleClose()
+      } else {
+        errorMsg(res.msg || 'Error al guardar')
       }
+    } catch (err) {
+      errorMsg(err.message || 'Error en la operación')
+    } finally {
+      loading.value = false
     }
-  });
-};
+  })
+}
 
 // Cerrar diálogo
 const handleClose = () => {
-  resetForm();
-  dialogVisible.value = false;
-};
+  resetForm()
+  dialogVisible.value = false
+}
 
-// Watcher para cargar datos al abrir
-watch(() => props.modelValue, (newVal) => {
-  if (newVal) {
-    loadNiveles();
-    resetForm();
+// Watcher para abrir diálogo
+watch(() => props.modelValue, (val) => {
+  if (val) {
+    loadNiveles()
+    resetForm()
   }
-}, { immediate: true });
+}, { immediate: true })
 </script>
 
 <style scoped>
-.el-text {
-  display: block;
-  margin-top: 5px;
+.text-caption {
+  margin-top: -10px;
+  margin-bottom: 10px;
 }
 </style>

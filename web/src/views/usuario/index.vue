@@ -1,74 +1,109 @@
 <template>
-<q-layout view="hHh lpR fFf">
-    <q-page-container>
-        <q-table
-        title="Listar Usuarios"
-        :columns="columns"
-        :rows="state.tableData"
-        row-key="idusuario"
-        :visible-columns="visibleColumns"
-        >
-        <template v-slot:top-left >
-        <q-btn
-        color="primary"
-        icon="add"
-        label ="+ usuario"
-        @click = "onEdit()"
-        />
-    </template>
-        </q-table>
-    </q-page-container>
-</q-layout>
+  <div class="app-container">
+
+    <q-table
+      :rows="state.tableData"
+      :columns="computedColumns"
+      row-key="idusuario"
+      flat
+      bordered
+      separator="horizontal"
+    >
+
+      <!-- 🔷 Encabezado personalizado -->
+      <template v-slot:top>
+        <div class="row items-center full-width q-pa-sm">
+          <div class="text-h6">Listar Usuarios</div>
+
+          <q-btn
+            color="primary"
+            icon="add"
+            label="usuario"
+            class="q-ml-auto"
+            @click="onEdit"
+          />
+        </div>
+      </template>
+
+    </q-table>
+
+    <!-- 🔻 Paginación existente -->
+    <Pagination 
+      :total="state.total"
+      :page="state.current"
+      :limit="state.size"
+      @pagination="queryUsuarioTableFun"
+    />
+  </div>
 </template>
+
 <script setup>
-import {ref, reactive, onMounted} from 'vue'
-import {queryUsuarioTable} from '../../api/usuario/usuario'
-import {errorMsg} from '../../utils/message'
-import Pagination from '../../components/Pagination.vue'
-// columnas llamadas de backend (controller)
-const state = reactive ({
-blurry:'',
-tableData:[],
-userObj:[],
-current:1,
-size:10,
-total: 0,
+import { ref, reactive, onMounted, computed } from "vue"
+import { queryUsuarioTable } from "../../api/usuario/usuario"
+import { errorMsg } from "../../utils/message"
+import Pagination from "../../components/Pagination.vue"
+
+// 🔹 Estado
+const state = reactive({
+  blurry: "",
+  tableData: [],
+  current: 1,
+  size: 10,
+  total: 0,
 })
+
+// 🔹 Columnas configuradas manualmente
 const columns = [
-    {name:'idusuario',label:'Id Usuario',align:'center',field:'idusuario',sortable:true},
-    {name:'nombre',label:'Nombre',align:'center',field:'nombre',sortable:true},
-    {name:'ap',label:'Apellido Paterno',align:'left',field:'ap',sortable:true},
-    {name:'am',label:'Apellido Materno',align:'center',field:'am',sortable:true},
+  { name: "idusuario", label: "Id Usuario", field: "idusuario", align: "center", sortable: true },
+  { name: "nombre", label: "Nombre", field: "nombre", align: "left", sortable: true },
+  { name: "ap", label: "Apellido Paterno", field: "ap", align: "left", sortable: true },
+  { name: "am", label: "Apellido Materno", field: "am", align: "center", sortable: true },
 ]
-const visibleColumns = ref(['idusuario','nombre'])
 
-// funcion 
-const queryUsuarioTableFun=()=> {
-    const params = {
-        blurry: state.blurry,
-        size:state.size,
-        currentPage: state.current
-    }
-    queryUsuarioTable(params)
-    .then((res)=> {
-            if (res.success) {
-                state.tableData = res.data.records
-                state.total = res.data.total
-            }  else {
-                errorMsg(res.mgs)
-            }
-        }
-    ) .catch(()=>{
-        errorMsg('Error al cargar los datos')
-    } )
+// Solo se muestran estas columnas
+const visibleColumns = ref(["idusuario", "nombre"])
+
+// 🔹 Se filtra la lista original de columnas en base a visibleColumns
+const computedColumns = computed(() =>
+  columns.filter(col => visibleColumns.value.includes(col.name))
+)
+
+// 🔹 Lógica de obtener usuarios
+const queryUsuarioTableFun = (obj) => {
+  if (obj?.page) state.current = obj.page
+  if (obj?.limit) state.size = obj.limit
+
+  const params = {
+    blurry: state.blurry,
+    size: state.size,
+    currentPage: state.current,
+  }
+
+  queryUsuarioTable(params)
+    .then((res) => {
+      if (res.success) {
+        state.tableData = res.data.records
+        state.total = res.data.total
+      } else {
+        errorMsg(res.msg)
+      }
+    })
+    .catch(() => errorMsg("Error al cargar los datos"))
 }
 
+// Abrir modal de edición
 const onEdit = () => {
-    console.log('NUEVO USUARIO')
+  console.log("NUEVO USUARIO")
+  // Aquí abrirías el diálogo QDialog
 }
+
 onMounted(() => {
-queryUsuarioTableFun()
+  queryUsuarioTableFun()
 })
 </script>
-<style lang="sass">
+
+<style scoped>
+.app-container {
+  padding: 20px;
+}
 </style>

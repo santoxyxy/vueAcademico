@@ -1,107 +1,94 @@
 <template>
-  <el-dialog 
-    :title="state.title" 
-    v-model="visible" 
-    width="600px"
-    :close-on-click-modal="false" 
-    @opened="openFun"
-  >
-    <el-form 
-      :model="state.form" 
-      :rules="state.rules" 
-      ref="formRef" 
-      label-width="130px"
-    >
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="Gestión" prop="gestion">
-            <el-input-number 
-              v-model="state.form.gestion" 
-              :min="2020"
-              :max="2030"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
+  <q-dialog v-model="visible" persistent maximized-width="600px" @show="openFun">
+    <q-card>
+      <q-card-section class="text-h6">
+        {{ state.title }}
+      </q-card-section>
 
-        <el-col :span="12">
-          <el-form-item label="Materia" prop="codmat">
-            <el-select 
-              v-model="state.form.codmat" 
-              placeholder="Seleccione materia"
-              filterable
-              style="width: 100%"
-            >
-              <el-option 
-                v-for="item in state.materiaList" 
-                :key="item.codmat" 
-                :label="`${item.codmat} - ${item.nombre}`" 
-                :value="item.codmat"
+      <q-card-section>
+        <q-form ref="formRef" @submit.prevent="submitForm">
+          <div class="row q-col-gutter-md">
+            <div class="col-6">
+              <q-input
+                dense
+                outlined
+                type="number"
+                v-model.number="state.form.gestion"
+                label="Gestión"
+                :min="2020"
+                :max="2030"
               />
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
+            </div>
 
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="Paralelo" prop="codpar">
-            <el-select 
-              v-model="state.form.codpar" 
-              placeholder="Paralelo"
-              style="width: 100%"
-            >
-              <el-option 
-                v-for="item in state.paraleloList" 
-                :key="item.codpar" 
-                :label="item.nombre" 
-                :value="item.codpar"
+            <div class="col-6">
+              <q-select
+                dense
+                outlined
+                v-model="state.form.codmat"
+                label="Materia"
+                :options="state.materiaList.map(item => ({ label: `${item.codmat} - ${item.nombre}`, value: item.codmat }))"
+                use-input
+                input-debounce="0"
+                emit-value
+                map-options
+                clearable
               />
-            </el-select>
-          </el-form-item>
-        </el-col>
+            </div>
+          </div>
 
-        <el-col :span="12">
-          <el-form-item label="Periodo" prop="codp">
-            <el-input-number 
-              v-model="state.form.codp" 
-              :min="1"
-              :max="2"
-              style="width: 100%"
-              placeholder="1 o 2"
+          <div class="row q-col-gutter-md q-mt-md">
+            <div class="col-6">
+              <q-select
+                dense
+                outlined
+                v-model="state.form.codpar"
+                label="Paralelo"
+                :options="state.paraleloList.map(item => ({ label: item.nombre, value: item.codpar }))"
+                clearable
+              />
+            </div>
+
+            <div class="col-6">
+              <q-input
+                dense
+                outlined
+                type="number"
+                v-model.number="state.form.codp"
+                label="Periodo"
+                :min="1"
+                :max="2"
+                placeholder="1 o 2"
+              />
+            </div>
+          </div>
+
+          <div class="q-mt-md">
+            <q-select
+              dense
+              outlined
+              v-model="state.form.ids"
+              label="Docente"
+              :options="state.docenteList.map(item => ({ label: `${item.nombre} ${item.ap || ''} ${item.am || ''}`, value: item.ids }))"
+              use-input
+              input-debounce="0"
+              emit-value
+              map-options
+              clearable
             />
-          </el-form-item>
-        </el-col>
-      </el-row>
+          </div>
+        </q-form>
+      </q-card-section>
 
-      <el-form-item label="Docente" prop="ids">
-        <el-select 
-          v-model="state.form.ids" 
-          placeholder="Seleccione docente"
-          filterable
-          style="width: 100%"
-        >
-          <el-option 
-            v-for="item in state.docenteList" 
-            :key="item.ids" 
-            :label="`${item.nombre} ${item.ap || ''} ${item.am || ''}`" 
-            :value="item.ids"
-          />
-        </el-select>
-      </el-form-item>
-    </el-form>
-
-    <template #footer>
-      <el-button @click="resetForm(formRef)">Reiniciar</el-button>
-      <el-button type="primary" :loading="isLoading" @click="submitForm">
-        Guardar
-      </el-button>
-    </template>
-  </el-dialog>
+      <q-card-actions align="right">
+        <q-btn dense flat label="Reiniciar" @click="resetForm(formRef)" />
+        <q-btn dense color="primary" label="Guardar" :loading="isLoading" @click="submitForm" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { editProgra } from '@/api/progra/progra'
 import { errorMsg, successMsg } from '@/utils/message'
 import { resetForm } from '@/utils/common'
@@ -130,24 +117,16 @@ const state = reactive({
     gestion: new Date().getFullYear(),
     ids: null
   },
-  rules: {
-    gestion: [{ required: true, message: 'La gestión es obligatoria', trigger: 'blur' }],
-    codmat: [{ required: true, message: 'Debe seleccionar una materia', trigger: 'change' }],
-    codpar: [{ required: true, message: 'Debe seleccionar un paralelo', trigger: 'change' }],
-    codp: [{ required: true, message: 'El periodo es obligatorio', trigger: 'blur' }],
-    ids: [{ required: true, message: 'Debe seleccionar un docente', trigger: 'change' }]
-  },
   materiaList: [],
   paraleloList: [],
   docenteList: []
 })
 
+// Abrir dialog y cargar datos
 const openFun = () => {
   resetForm(formRef.value)
   state.title = 'Nueva Clase'
   isLoading.value = false
-  
-  // TODO: Cargar listas desde API
   loadSelectOptions()
 
   if (props.prograObj.codpar) {
@@ -164,29 +143,25 @@ const openFun = () => {
   }
 }
 
+// Cargar opciones para selects (ejemplo temporal)
 const loadSelectOptions = () => {
-  // TODO: Implementar llamadas reales a API
-  // getMateriaList(), getParaleloList(), getDocenteList()
-  
-  // Datos temporales de ejemplo
   state.materiaList = [
     { codmat: 'MAT101', nombre: 'Matemáticas I' },
     { codmat: 'FIS101', nombre: 'Física I' }
   ]
-  
   state.paraleloList = [
     { codpar: 1, nombre: 'A' },
     { codpar: 2, nombre: 'B' }
   ]
-  
   state.docenteList = [
     { ids: 1, nombre: 'Juan', ap: 'Pérez', am: 'López' },
     { ids: 2, nombre: 'María', ap: 'García', am: 'Ruiz' }
   ]
 }
 
+// Guardar formulario
 const submitForm = () => {
-  formRef.value.validate((valid) => {
+  formRef.value.validate().then((valid) => {
     if (valid) {
       isLoading.value = true
       editProgra(state.form).then((res) => {
@@ -203,3 +178,6 @@ const submitForm = () => {
   })
 }
 </script>
+
+<style scoped>
+</style>

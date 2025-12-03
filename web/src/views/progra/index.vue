@@ -1,132 +1,127 @@
 <template>
-  <div class="app-container">
+  <q-page padding class="q-pa-md">
     <!-- Filtros de búsqueda -->
-    <div class="searchDiv">
-      <el-input 
-        v-model="state.blurry" 
-        placeholder="Buscar por materia o docente"
+    <div class="row q-col-gutter-sm q-mb-md" style="flex-wrap: wrap; align-items: center;">
+      <q-input
+        dense
+        outlined
+        v-model="state.blurry"
+        label="Buscar por materia o docente"
         clearable
         style="width: 250px"
         @keyup.enter="getPrograListFun"
       />
-      
-      <el-select 
-        v-model="state.gestion" 
-        placeholder="Gestión"
+
+      <q-select
+        dense
+        outlined
+        v-model="state.gestion"
+        :options="gestiones"
+        label="Gestión"
         clearable
         style="width: 120px"
-      >
-        <el-option 
-          v-for="year in gestiones" 
-          :key="year" 
-          :label="year" 
-          :value="year"
-        />
-      </el-select>
+      />
 
-      <el-input 
-        v-model="state.codmat" 
-        placeholder="Código Materia"
+      <q-input
+        dense
+        outlined
+        v-model="state.codmat"
+        label="Código Materia"
         clearable
         style="width: 150px"
       />
 
-      <el-input-number 
-        v-model="state.codn" 
-        placeholder="Nivel"
-        :min="1"
-        :max="10"
-        controls-position="right"
+      <q-input
+        dense
+        outlined
+        type="number"
+        v-model.number="state.codn"
+        label="Nivel"
+        min="1"
+        max="10"
         style="width: 120px"
       />
 
-      <el-button type="primary" icon="Search" @click="getPrograListFun">
-        Buscar
-      </el-button>
-      
-      <el-button type="success" icon="Plus" @click="addProgra" v-if="hasPer(['ROLE_ADMIN'])">
-        Nueva Clase
-      </el-button>
+      <q-btn
+        dense
+        color="primary"
+        icon="search"
+        label="Buscar"
+        @click="getPrograListFun"
+      />
+
+      <q-btn
+        dense
+        color="secondary"
+        icon="add"
+        label="Nueva Clase"
+        v-if="hasPer(['ROLE_ADMIN'])"
+        @click="addProgra"
+      />
     </div>
 
     <!-- Tabla -->
-    <el-table 
-      :data="state.tableData" 
-      v-loading="state.loading" 
-      border 
-      stripe
+    <q-table
+      title="Lista de Clases"
+      :rows="state.tableData"
+      :columns="columns"
+      row-key="codmat"
+      flat
+      bordered
+      :loading="state.loading"
+      class="q-mb-md"
     >
-      <el-table-column type="index" label="#" width="60" align="center" />
-      
-      <el-table-column prop="gestion" label="Gestión" width="100" align="center" />
-      
-      <el-table-column prop="codmat" label="Código" width="100" />
-      
-      <el-table-column prop="nombreMateria" label="Materia" min-width="200" show-overflow-tooltip />
-      
-      <el-table-column prop="nombreNivel" label="Nivel" width="100" />
-      
-      <el-table-column prop="nombreParalelo" label="Paralelo" width="100" align="center" />
-      
-      <el-table-column prop="nombreDocente" label="Docente" min-width="180" show-overflow-tooltip />
-      
-      <el-table-column prop="tipoDocente" label="Tipo" width="100">
-        <template #default="{ row }">
-          <el-tag :type="getDocenteTagType(row.tipoDocente)" size="small">
-            {{ row.tipoDocente }}
-          </el-tag>
-        </template>
-      </el-table-column>
+      <template v-slot:body-cell-tipoDocente="props">
+        <q-chip :color="getDocenteTagType(props.row.tipoDocente)" text-color="white" dense>
+          {{ props.row.tipoDocente }}
+        </q-chip>
+      </template>
 
-      <el-table-column prop="cantidadEstudiantes" label="Estudiantes" width="110" align="center">
-        <template #default="{ row }">
-          <el-tag type="info" size="small">
-            {{ row.cantidadEstudiantes || 0 }}
-          </el-tag>
-        </template>
-      </el-table-column>
+      <template v-slot:body-cell-cantidadEstudiantes="props">
+        <q-chip color="info" text-color="white" dense>
+          {{ props.row.cantidadEstudiantes || 0 }}
+        </q-chip>
+      </template>
 
-      <el-table-column label="Operaciones" width="180" align="center" fixed="right">
-        <template #default="{ row }">
-          <el-button 
-            type="primary" 
-            size="small" 
-            icon="Edit"
-            @click="editProgra(row)"
+      <template v-slot:body-cell-operaciones="props">
+        <div class="row items-center justify-center q-gutter-sm">
+          <q-btn
+            dense
+            color="primary"
+            icon="edit"
+            label="Editar"
+            size="sm"
             v-if="hasPer(['ROLE_ADMIN', 'ROLE_DOCENTE'])"
-          >
-            Editar
-          </el-button>
-          <el-popconfirm
-            title="¿Eliminar esta clase?"
-            @confirm="delProgra(row)"
+            @click="editProgra(props.row)"
+          />
+          <q-btn
+            dense
+            color="negative"
+            icon="delete"
+            label="Eliminar"
+            size="sm"
             v-if="hasPer(['ROLE_ADMIN'])"
-          >
-            <template #reference>
-              <el-button type="danger" size="small" icon="Delete">
-                Eliminar
-              </el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
+            @click="delProgra(props.row)"
+          />
+        </div>
+      </template>
+    </q-table>
 
     <!-- Paginación -->
-    <Pagination 
-      :total="state.total" 
-      :page="state.current" 
-      :limit="state.size" 
+    <Pagination
+      :total="state.total"
+      :page="state.current"
+      :limit="state.size"
       @pagination="getPrograListFun"
     />
 
     <!-- Dialog -->
-    <EditProgra 
-      v-model:dialogVisible="dialogVisible" 
+    <EditProgra
+      v-model:dialog-visible="dialogVisible"
       :prograObj="currentProgra"
       @get-list="getPrograListFun"
     />
-  </div>
+  </q-page>
 </template>
 
 <script setup>
@@ -153,13 +148,25 @@ const dialogVisible = ref(false)
 const currentProgra = ref({})
 
 // Generar últimos 5 años para el select
-const gestiones = ref(
-  Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
-)
+const gestiones = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
+
+// Columnas de la tabla
+const columns = [
+  { name: 'index', label: '#', field: (row, index) => index + 1, align: 'center', style: 'width: 60px;' },
+  { name: 'gestion', label: 'Gestión', field: 'gestion', align: 'center', style: 'width: 100px;' },
+  { name: 'codmat', label: 'Código', field: 'codmat', style: 'width: 100px;' },
+  { name: 'nombreMateria', label: 'Materia', field: 'nombreMateria', style: 'min-width: 200px;' },
+  { name: 'nombreNivel', label: 'Nivel', field: 'nombreNivel', style: 'width: 100px;' },
+  { name: 'nombreParalelo', label: 'Paralelo', field: 'nombreParalelo', align: 'center', style: 'width: 100px;' },
+  { name: 'nombreDocente', label: 'Docente', field: 'nombreDocente', style: 'min-width: 180px;' },
+  { name: 'tipoDocente', label: 'Tipo', field: 'tipoDocente', style: 'width: 100px;' },
+  { name: 'cantidadEstudiantes', label: 'Estudiantes', field: 'cantidadEstudiantes', align: 'center', style: 'width: 110px;' },
+  { name: 'operaciones', label: 'Operaciones', field: 'operaciones', align: 'center', style: 'width: 180px;' }
+]
 
 const getPrograListFun = (obj) => {
-  if (obj && obj.page) state.current = obj.page
-  if (obj && obj.limit) state.size = obj.limit
+  if (obj?.page) state.current = obj.page
+  if (obj?.limit) state.size = obj.limit
 
   state.loading = true
   const params = {
@@ -203,7 +210,7 @@ const delProgra = (row) => {
     codmat: row.codmat,
     gestion: row.gestion
   }
-  
+
   delPrograApi(params).then((res) => {
     if (res.success) {
       successMsg(res.data)
@@ -216,7 +223,7 @@ const delProgra = (row) => {
 
 const getDocenteTagType = (tipo) => {
   const types = {
-    'Titular': 'success',
+    'Titular': 'positive',
     'Invitado': 'warning',
     'Auxiliar': 'info'
   }
@@ -229,14 +236,4 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.app-container {
-  padding: 20px;
-}
-
-.searchDiv {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
 </style>

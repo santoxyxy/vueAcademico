@@ -1,27 +1,48 @@
 <template>
-  <q-dialog v-model="dialogVisible" persistent>
-    <q-card style="min-width: 500px">
-      <q-card-section class="text-h6">
-        {{ form.idcliente ? 'Editar Cliente' : 'Nuevo Cliente' }}
-      </q-card-section>
+  <el-dialog
+    :model-value="dialogVisible"
+    width="500px"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
+    @close="cerrarDialogo"
+  >
+    <template #title>
+      {{ form.idcliente ? 'Editar Cliente' : 'Nuevo Cliente' }}
+    </template>
 
-      <q-card-section>
-        <div class="q-gutter-md">
-          <q-input v-model="form.nombre" label="Nombre" />
-          <q-input v-model="form.apellidos" label="Apellidos" />
-          <q-input v-model="form.compania" label="Compañía" />
-          <q-input v-model="form.cargo" label="Cargo" />
-          <q-input v-model="form.telefono" label="Teléfono" />
-          <q-input v-model="form.email" label="Correo electrónico" />
-        </div>
-      </q-card-section>
+    <el-form :model="form" label-width="140px" class="form-body">
+      <el-form-item label="Nombre">
+        <el-input v-model="form.nombre" placeholder="Nombre" />
+      </el-form-item>
 
-      <q-card-actions align="right">
-        <q-btn flat label="Cancelar" color="negative" @click="cerrarDialogo" />
-        <q-btn flat label="Guardar" color="primary" @click="guardarCliente" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      <el-form-item label="Apellidos">
+        <el-input v-model="form.apellidos" placeholder="Apellidos" />
+      </el-form-item>
+
+      <el-form-item label="Compañía">
+        <el-input v-model="form.compania" placeholder="Compañía" />
+      </el-form-item>
+
+      <el-form-item label="Cargo">
+        <el-input v-model="form.cargo" placeholder="Cargo" />
+      </el-form-item>
+
+      <el-form-item label="Teléfono">
+        <el-input v-model="form.telefono" placeholder="Teléfono" />
+      </el-form-item>
+
+      <el-form-item label="Correo electrónico">
+        <el-input v-model="form.email" placeholder="Correo electrónico" />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="cerrarDialogo">Cancelar</el-button>
+        <el-button type="primary" @click="guardarCliente">Guardar</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -29,22 +50,22 @@ import { reactive, watch, computed } from 'vue'
 import { editModulo1 } from '../../../api/modulo1/modulo1'
 import { successMsg, errorMsg } from '../../../utils/message'
 
-// Props desde index.vue
+// Props
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   clienteObj: { type: Object, default: () => ({}) },
 })
 
-// Emit para controlar el v-model
+// Emits
 const emit = defineEmits(['update:modelValue', 'close'])
 
-// Computed para vincular el diálogo
+// Vincular el v-model al diálogo
 const dialogVisible = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val),
 })
 
-// Estado del formulario
+// Datos del formulario
 const form = reactive({
   idcliente: null,
   nombre: '',
@@ -55,7 +76,7 @@ const form = reactive({
   email: '',
 })
 
-// 🔹 Sincroniza datos al abrir
+// Cargar datos al editar
 watch(
   () => props.clienteObj,
   (nuevo) => {
@@ -64,7 +85,7 @@ watch(
   { immediate: true }
 )
 
-// 🔹 Limpia al crear uno nuevo
+// Limpiar datos si es nuevo
 watch(
   () => props.modelValue,
   (visible) => {
@@ -75,25 +96,25 @@ watch(
   }
 )
 
-// 🔹 Cerrar diálogo
+// Cerrar diálogo
 const cerrarDialogo = () => {
   emit('update:modelValue', false)
   emit('close')
 }
 
-// 🔹 Guardar (nuevo o editar)
+// Guardar cliente
 const guardarCliente = async () => {
   try {
-    if (form.idcliente) {
-      // modificar
-      const res = await editModulo1(form)
-      if (res.success) successMsg('Cliente actualizado correctamente')
-      else errorMsg(res.msg || 'Error al actualizar cliente')
+    const res = await editModulo1(form)
+
+    if (res.success) {
+      successMsg(
+        form.idcliente
+          ? 'Cliente actualizado correctamente'
+          : 'Cliente registrado correctamente'
+      )
     } else {
-      // nuevo
-      const res = await editModulo1(form)
-      if (res.success) successMsg('Cliente registrado correctamente')
-      else errorMsg(res.msg || 'Error al registrar cliente')
+      errorMsg(res.msg || 'Error al guardar cliente')
     }
 
     cerrarDialogo()
@@ -103,3 +124,14 @@ const guardarCliente = async () => {
   }
 }
 </script>
+
+<style scoped>
+.form-body {
+  padding-right: 10px;
+}
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+</style>

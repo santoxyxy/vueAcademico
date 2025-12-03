@@ -1,14 +1,14 @@
 <template>
-  <q-page class="flex flex-center">
-    <img alt="Quasar logo" src="../assets/logo.svg" style="width: 200px; height: 200px">
-  </q-page>
+  <div class="hello-world">
+    {{ msg }}
+  </div>
 </template>
 
 <style>
 </style>
 
-<script>
-export default {
-  name: 'HelloWorld'
-}
+<script setup>
+defineProps({
+  msg: String
+})
 </script>

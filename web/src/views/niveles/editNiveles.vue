@@ -1,45 +1,69 @@
 <template>
-  <div>
-    <el-dialog :title="state.title" v-model="dialogVisible" width="500px" @close="closeFun">
-      <el-form :model="state.form" :rules="state.rules" ref="formRef" label-width="120px">
-        <el-form-item label="Nombre" prop="nombre">
-          <el-input v-model="state.form.nombre" placeholder="Ingrese nombre del nivel (ej: Primaria, Secundaria)"></el-input>
-        </el-form-item>
-        <el-form-item label="Estado" prop="estado">
-          <el-radio-group v-model="state.form.estado">
-            <el-radio :label="1">Activo</el-radio>
-            <el-radio :label="0">Inactivo</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="closeFun">Cancelar</el-button>
-          <el-button type="primary" @click="submitFun">Guardar</el-button>
-        </span>
-      </template>
-    </el-dialog>
-  </div>
+  <q-dialog v-model="dialogVisible" persistent>
+    <q-card style="min-width: 400px; max-width: 500px;">
+      <q-card-section>
+        <div class="text-h6">{{ state.title }}</div>
+      </q-card-section>
+
+      <q-card-section>
+        <q-form ref="formRef" @submit.prevent="submitFun">
+          <q-input
+            dense
+            outlined
+            v-model="state.form.nombre"
+            label="Nombre"
+            placeholder="Ingrese nombre del nivel (ej: Primaria, Secundaria)"
+            :rules="[val => !!val || 'Por favor ingrese nombre']"
+          />
+
+          <div class="q-mt-md">
+            <q-radio-group
+              v-model="state.form.estado"
+              inline
+              :options="estadoOptions"
+              :rules="[val => val !== null || 'Por favor seleccione estado']"
+            />
+          </div>
+        </q-form>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Cancelar" color="grey" @click="closeFun" />
+        <q-btn
+          label="Guardar"
+          color="primary"
+          :loading="isLoading"
+          @click="submitFun"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
-import { editNiveles } from "@/api/niveles/niveles";
-import { errorMsg, successMsg } from "@/utils/message";
-import { computed, reactive, ref, watch } from "vue";
+import { reactive, ref, watch, computed } from 'vue'
+import { editNiveles } from '@/api/niveles/niveles'
+import { successMsg, errorMsg } from '@/utils/message'
 
 const props = defineProps({
   dialogVisible: Boolean,
   nivelesObj: Object
 })
 
-const emit = defineEmits(['update:dialogVisible', 'getList'])
+const emit = defineEmits(['update:dialogVisible', 'get-list'])
 
 const dialogVisible = computed({
   get: () => props.dialogVisible,
-  set: (val) => emit('update:dialogVisible', val)
+  set: val => emit('update:dialogVisible', val)
 })
 
 const formRef = ref(null)
+const isLoading = ref(false)
+
+const estadoOptions = [
+  { label: 'Activo', value: 1 },
+  { label: 'Inactivo', value: 0 }
+]
 
 const state = reactive({
   title: 'Nuevo Nivel',
@@ -47,45 +71,43 @@ const state = reactive({
     codn: null,
     nombre: '',
     estado: 1
-  },
-  rules: {
-    nombre: [
-      { required: true, message: 'Por favor ingrese nombre', trigger: 'blur' }
-    ],
-    estado: [
-      { required: true, message: 'Por favor seleccione estado', trigger: 'change' }
-    ]
   }
 })
 
-watch(() => props.nivelesObj, (newVal) => {
-  if (newVal && newVal.codn) {
-    state.title = 'Editar Nivel'
-    state.form = { ...newVal }
-  } else {
-    state.title = 'Nuevo Nivel'
-    state.form = { codn: null, nombre: '', estado: 1 }
-  }
-}, { deep: true, immediate: true })
+watch(
+  () => props.nivelesObj,
+  (newVal) => {
+    if (newVal && newVal.codn) {
+      state.title = 'Editar Nivel'
+      state.form = { ...newVal }
+    } else {
+      state.title = 'Nuevo Nivel'
+      state.form = { codn: null, nombre: '', estado: 1 }
+    }
+  },
+  { immediate: true, deep: true }
+)
 
 // Cerrar Dialog
 const closeFun = () => {
-  formRef.value?.resetFields()
+  formRef.value?.resetValidation()
   dialogVisible.value = false
 }
 
 // Guardar
 const submitFun = () => {
-  formRef.value?.validate((valid) => {
+  formRef.value.validate().then((valid) => {
     if (valid) {
-      editNiveles(state.form).then(res => {
+      isLoading.value = true
+      editNiveles(state.form).then((res) => {
         if (res.success) {
           successMsg(res.data)
-          emit('getList')
+          emit('get-list')
           closeFun()
         } else {
           errorMsg(res.msg)
         }
+        isLoading.value = false
       })
     }
   })
@@ -93,4 +115,8 @@ const submitFun = () => {
 </script>
 
 <style scoped>
+.q-radio-group {
+  display: flex;
+  gap: 15px;
+}
 </style>

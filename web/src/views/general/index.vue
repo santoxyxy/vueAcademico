@@ -1,166 +1,135 @@
 <template>
   <div class="app-container">
     <!-- Barra de búsqueda y filtros -->
-    <el-form :inline="true" :model="queryForm" class="demo-form-inline">
-      <el-form-item label="Búsqueda">
-        <el-input 
-          v-model="queryForm.blurry" 
-          placeholder="Usuario, email, nombre..." 
-          clearable
-          @clear="handleQuery"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
+    <q-form class="row q-gutter-md items-end" @submit.prevent="handleQuery">
+      <q-input
+        filled
+        label="Búsqueda"
+        v-model="queryForm.blurry"
+        clearable
+        @clear="handleQuery"
+        @keyup.enter="handleQuery"
+        class="col-3"
+      />
 
-      <el-form-item label="Gestión">
-        <el-select 
-          v-model="queryForm.gestion" 
-          placeholder="Todas" 
-          clearable
-          @change="handleQuery"
-        >
-          <el-option 
-            v-for="year in gestionesDisponibles" 
-            :key="year" 
-            :label="year" 
-            :value="year" 
-          />
-        </el-select>
-      </el-form-item>
+      <q-select
+        filled
+        label="Gestión"
+        v-model="queryForm.gestion"
+        :options="gestionesDisponibles.map(y => ({ label: y, value: y }))"
+        clearable
+        @update:model-value="handleQuery"
+        class="col-2"
+      />
 
-      <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">
-          Buscar
-        </el-button>
-        <el-button icon="Refresh" @click="resetQuery">
-          Limpiar
-        </el-button>
-      </el-form-item>
-    </el-form>
+      <div class="col-auto">
+        <q-btn color="primary" icon="search" label="Buscar" @click="handleQuery" />
+        <q-btn flat icon="refresh" label="Limpiar" @click="resetQuery" class="q-ml-sm" />
+      </div>
+    </q-form>
 
     <!-- Botones de acción -->
-    <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-          v-if="hasPer('general:add')"
-          type="primary"
-          icon="Plus"
-          @click="handleAdd"
-        >
-          Nuevo Registro
-        </el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          icon="RefreshRight"
-          @click="handleQuery"
-        >
-          Actualizar
-        </el-button>
-      </el-col>
-    </el-row>
+    <div class="row q-gutter-sm q-my-md">
+      <q-btn
+        v-if="hasPer('general:add')"
+        color="primary"
+        icon="add"
+        label="Nuevo Registro"
+        @click="handleAdd"
+      />
+      <q-btn
+        color="secondary"
+        icon="refresh"
+        label="Actualizar"
+        @click="handleQuery"
+      />
+    </div>
 
     <!-- Tabla de datos -->
-    <el-table 
-      v-loading="loading" 
-      :data="tableData" 
-      border 
-      stripe
-      style="width: 100%"
+    <q-table
+      :rows="tableData"
+      :columns="columns"
+      row-key="ids"
+      :loading="loading"
+      flat
+      bordered
+      square
+      class="shadow-1"
     >
-      <el-table-column type="index" label="#" width="50" align="center" />
-      
-      <el-table-column prop="username" label="Usuario" width="120" />
-      
-      <el-table-column prop="nickName" label="Nombre" width="150">
-        <template #default="{ row }">
-          <el-tag>{{ row.nickName }}</el-tag>
-        </template>
-      </el-table-column>
+      <template v-slot:body-cell-nickName="props">
+        <q-td :props="props">
+          <q-chip>{{ props.row.nickName }}</q-chip>
+        </q-td>
+      </template>
 
-      <el-table-column prop="nombreCompleto" label="Nombre Completo" min-width="180" />
+      <template v-slot:body-cell-tipo="props">
+        <q-td :props="props">
+          <q-chip :color="props.row.tipo === 'DOCENTE' ? 'green' : 'primary'" text-color="white">
+            {{ props.row.tipo || 'N/A' }}
+          </q-chip>
+        </q-td>
+      </template>
 
-      <el-table-column prop="email" label="Email" min-width="180" />
+      <template v-slot:body-cell-gestion="props">
+        <q-td :props="props">
+          <q-chip color="orange" text-color="white">{{ props.row.gestion }}</q-chip>
+        </q-td>
+      </template>
 
-      <el-table-column prop="tipo" label="Tipo" width="120" align="center">
-        <template #default="{ row }">
-          <el-tag 
-            :type="row.tipo === 'DOCENTE' ? 'success' : 'primary'"
-            effect="dark"
-          >
-            {{ row.tipo || 'N/A' }}
-          </el-tag>
-        </template>
-      </el-table-column>
+      <template v-slot:body-cell-totalMaterias="props">
+        <q-td :props="props">
+          <q-badge color="green" :label="props.row.totalMaterias" />
+        </q-td>
+      </template>
 
-      <el-table-column prop="gestion" label="Gestión" width="100" align="center">
-        <template #default="{ row }">
-          <el-tag type="warning">{{ row.gestion }}</el-tag>
-        </template>
-      </el-table-column>
+      <template v-slot:body-cell-totalNotas="props">
+        <q-td :props="props">
+          <q-badge color="primary" :label="props.row.totalNotas" />
+        </q-td>
+      </template>
 
-      <el-table-column prop="totalMaterias" label="Materias" width="90" align="center">
-        <template #default="{ row }">
-          <el-badge :value="row.totalMaterias" class="item" type="success" />
-        </template>
-      </el-table-column>
+      <template v-slot:body-cell-enabled="props">
+        <q-td :props="props">
+          <q-chip :color="props.row.enabled ? 'green' : 'red'" text-color="white">
+            {{ props.row.enabled ? 'Activo' : 'Inactivo' }}
+          </q-chip>
+        </q-td>
+      </template>
 
-      <el-table-column prop="totalNotas" label="Notas" width="90" align="center">
-        <template #default="{ row }">
-          <el-badge :value="row.totalNotas" class="item" type="primary" />
-        </template>
-      </el-table-column>
-
-      <el-table-column prop="enabled" label="Estado" width="100" align="center">
-        <template #default="{ row }">
-          <el-tag :type="row.enabled ? 'success' : 'danger'">
-            {{ row.enabled ? 'Activo' : 'Inactivo' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="Operaciones" width="280" fixed="right" align="center">
-        <template #default="{ row }">
-          <el-button
-            type="primary"
-            size="small"
-            icon="View"
-            @click="handleDetail(row)"
-          >
-            Detalles
-          </el-button>
-          
-          <el-button
+      <template v-slot:body-cell-operaciones="props">
+        <q-td :props="props">
+          <q-btn dense color="primary" icon="visibility" label="Detalles" @click="handleDetail(props.row)" />
+          <q-btn
+            dense
+            color="green"
+            icon="edit"
+            label="Editar"
             v-if="hasPer('general:edit')"
-            type="success"
-            size="small"
-            icon="Edit"
-            @click="handleEdit(row)"
-          >
-            Editar
-          </el-button>
-          
-          <el-button
+            class="q-ml-sm"
+            @click="handleEdit(props.row)"
+          />
+          <q-btn
+            dense
+            color="red"
+            icon="delete"
+            label="Eliminar"
             v-if="hasPer('general:del')"
-            type="danger"
-            size="small"
-            icon="Delete"
-            @click="handleDelete(row)"
-          >
-            Eliminar
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+            class="q-ml-sm"
+            @click="handleDelete(props.row)"
+          />
+        </q-td>
+      </template>
+    </q-table>
 
     <!-- Paginación -->
-    <Pagination
-      v-show="total > 0"
-      :total="total"
-      v-model:page="queryForm.currentPage"
-      v-model:limit="queryForm.size"
-      @pagination="getTableData"
+    <q-pagination
+      v-if="total > 0"
+      v-model="queryForm.currentPage"
+      :max="Math.ceil(total / queryForm.size)"
+      max-pages="5"
+      boundary-numbers
+      @update:model-value="getTableData"
+      class="q-mt-md"
     />
 
     <!-- Dialog de Edición/Creación -->
@@ -181,15 +150,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { Dialog, Notify } from 'quasar'
 import { queryGeneralTable, delGeneral } from '@/api/general/general'
 import { hasPer } from '@/utils/common'
-import Pagination from '@/components/Pagination.vue'
 import EditGeneral from './editGeneral.vue'
 import DetalleUsuario from './detalleUsuario.vue'
 
-// Estado
 const loading = ref(false)
 const tableData = ref([])
 const total = ref(0)
@@ -198,7 +165,6 @@ const detalleDialogVisible = ref(false)
 const editData = ref(null)
 const selectedUsuario = ref(null)
 
-// Formulario de consulta
 const queryForm = reactive({
   blurry: '',
   gestion: null,
@@ -206,96 +172,87 @@ const queryForm = reactive({
   size: 10
 })
 
-// Gestiones disponibles (últimos 5 años desde actual)
 const gestionesDisponibles = computed(() => {
   const currentYear = new Date().getFullYear()
   return Array.from({ length: 5 }, (_, i) => currentYear - i)
 })
 
-// Obtener datos de la tabla
+const columns = [
+  { name: 'index', label: '#', field: (row, i) => i + 1, align: 'center', style: 'width: 50px' },
+  { name: 'username', label: 'Usuario', field: 'username', align: 'left', style: 'width: 120px' },
+  { name: 'nickName', label: 'Nombre', field: 'nickName', align: 'left', style: 'width: 150px' },
+  { name: 'nombreCompleto', label: 'Nombre Completo', field: 'nombreCompleto', align: 'left' },
+  { name: 'email', label: 'Email', field: 'email', align: 'left' },
+  { name: 'tipo', label: 'Tipo', field: 'tipo', align: 'center', style: 'width: 120px' },
+  { name: 'gestion', label: 'Gestión', field: 'gestion', align: 'center', style: 'width: 100px' },
+  { name: 'totalMaterias', label: 'Materias', field: 'totalMaterias', align: 'center', style: 'width: 90px' },
+  { name: 'totalNotas', label: 'Notas', field: 'totalNotas', align: 'center', style: 'width: 90px' },
+  { name: 'enabled', label: 'Estado', field: 'enabled', align: 'center', style: 'width: 100px' },
+  { name: 'operaciones', label: 'Operaciones', align: 'center', style: 'width: 280px' }
+]
+
 const getTableData = async () => {
   loading.value = true
   try {
-    const params = {
-      blurry: queryForm.blurry,
-      gestion: queryForm.gestion,
-      currentPage: queryForm.currentPage,
-      size: queryForm.size
-    }
-    
+    const params = { ...queryForm }
     const { data } = await queryGeneralTable(params)
-    
     if (data.success) {
       tableData.value = data.data.records
       total.value = data.data.total
     }
   } catch (error) {
-    ElMessage.error('Error al obtener datos: ' + error.message)
+    Notify.create({ type: 'negative', message: 'Error al obtener datos: ' + error.message })
   } finally {
     loading.value = false
   }
 }
 
-// Buscar
 const handleQuery = () => {
   queryForm.currentPage = 1
   getTableData()
 }
 
-// Limpiar búsqueda
 const resetQuery = () => {
   queryForm.blurry = ''
   queryForm.gestion = null
   handleQuery()
 }
 
-// Agregar nuevo
 const handleAdd = () => {
   editData.value = null
   editDialogVisible.value = true
 }
 
-// Editar
 const handleEdit = (row) => {
   editData.value = { ...row }
   editDialogVisible.value = true
 }
 
-// Ver detalles
 const handleDetail = (row) => {
   selectedUsuario.value = { ...row }
   detalleDialogVisible.value = true
 }
 
-// Eliminar
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm(
-      `¿Está seguro de eliminar el registro de ${row.username} en la gestión ${row.gestion}?`,
-      'Confirmar eliminación',
-      {
-        confirmButtonText: 'Eliminar',
-        cancelButtonText: 'Cancelar',
-        type: 'warning'
-      }
-    )
-
+    await Dialog.create({
+      title: 'Confirmar eliminación',
+      message: `¿Está seguro de eliminar el registro de ${row.username} en la gestión ${row.gestion}?`,
+      cancel: true,
+      persistent: true
+    })
     const { data } = await delGeneral(row.ids, row.gestion)
-    
     if (data.success) {
-      ElMessage.success('Registro eliminado exitosamente')
+      Notify.create({ type: 'positive', message: 'Registro eliminado exitosamente' })
       getTableData()
     } else {
-      ElMessage.error(data.msg)
+      Notify.create({ type: 'negative', message: data.msg })
     }
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('Error al eliminar: ' + error.message)
-    }
+    // Cancelado o error
   }
 }
 
-// Inicialización
 onMounted(() => {
   getTableData()
 })
@@ -304,17 +261,5 @@ onMounted(() => {
 <style scoped>
 .app-container {
   padding: 20px;
-}
-
-.demo-form-inline .el-form-item {
-  margin-right: 10px;
-}
-
-.mb8 {
-  margin-bottom: 8px;
-}
-
-.el-badge {
-  margin-left: 10px;
 }
 </style>

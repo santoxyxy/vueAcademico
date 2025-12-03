@@ -1,39 +1,84 @@
 <template>
   <div>
-    <div class="searchDiv">
-      <el-input class="searchInput" v-model="state.blurry" placeholder="Por favor ingrese un nombre de nivel" clearable></el-input>
-      <el-button type="primary" @click="getNivelesListFun">Consulta</el-button>
-      <el-button v-if="hasPer('niveles:add')" @click="editNivelesFun" style="float: right;">Nuevo</el-button>
+    <!-- Filtros y acciones -->
+    <div class="row q-col-gutter-md q-mb-md items-center">
+      <q-input
+        dense
+        outlined
+        v-model="state.blurry"
+        label="Por favor ingrese un nombre de nivel"
+        clearable
+        class="col"
+        @keyup.enter="getNivelesListFun"
+      />
+      <q-btn dense color="primary" label="Consulta" @click="getNivelesListFun" />
+      <q-btn
+        dense
+        color="secondary"
+        label="Nuevo"
+        v-if="hasPer('niveles:add')"
+        class="q-ml-md"
+        @click="editNivelesFun"
+      />
     </div>
-    <el-table :data="state.tableData" row-key="codn" border height="calc(100vh - 180px)" max-height="calc(100vh - 180px)">
-      <el-table-column label="Numero de Serie" type="index" width="60"></el-table-column>
-      <el-table-column label="Código" prop="codn" width="100"></el-table-column>
-      <el-table-column label="Nombre del Nivel" prop="nombre"></el-table-column>
-      <el-table-column label="Estado" prop="estado" width="100" align="center">
-        <template #default="scope">
-          <el-tag :type="scope.row.estado === 1 ? 'success' : 'danger'">
-            {{ scope.row.estado === 1 ? 'Activo' : 'Inactivo' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="Funcionar" prop="option" width="200px" align="center">
-        <template #default="scope">
-          <el-button v-if="hasPer('niveles:edit')" type="primary" @click="editNivelesFun(JSON.parse(JSON.stringify(scope.row)))">Editar</el-button>
-          <el-button v-if="hasPer('niveles:del')" type="danger" @click="delNivelesFun(scope.row.codn, scope.row.nombre)">Borrar</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <edit-niveles v-model:dialog-visible="dialogVisible" :niveles-obj="state.nivelesObj" @get-list="getNivelesListFun"></edit-niveles>
+
+    <!-- Tabla -->
+    <q-table
+      flat
+      bordered
+      :rows="state.tableData"
+      row-key="codn"
+      :columns="columns"
+      row-height="28"
+      class="shadow-0"
+    >
+      <template v-slot:body-cell-estado="props">
+        <q-chip
+          dense
+          :color="props.row.estado === 1 ? 'green' : 'red'"
+          text-color="white"
+        >
+          {{ props.row.estado === 1 ? 'Activo' : 'Inactivo' }}
+        </q-chip>
+      </template>
+
+      <template v-slot:body-cell-option="props">
+        <q-btn
+          dense
+          color="primary"
+          size="sm"
+          label="Editar"
+          v-if="hasPer('niveles:edit')"
+          @click="editNivelesFun({ ...props.row })"
+        />
+        <q-btn
+          dense
+          color="negative"
+          size="sm"
+          label="Borrar"
+          class="q-ml-sm"
+          v-if="hasPer('niveles:del')"
+          @click="delNivelesFun(props.row.codn, props.row.nombre)"
+        />
+      </template>
+    </q-table>
+
+    <!-- Dialog de edición -->
+    <edit-niveles
+      v-model:dialog-visible="dialogVisible"
+      :niveles-obj="state.nivelesObj"
+      @get-list="getNivelesListFun"
+    />
   </div>
 </template>
 
 <script setup>
-import { queryNivelesTable, delNiveles } from "@/api/niveles/niveles";
-import { errorMsg, infoMsg, successMsg } from "@/utils/message";
-import { hasPer } from "@/utils/common";
-import editNiveles from "./editNiveles";
-import { onMounted, reactive, ref } from "vue";
-import { ElMessageBox } from "element-plus";
+import { reactive, ref, onMounted } from 'vue'
+import { queryNivelesTable, delNiveles } from '@/api/niveles/niveles'
+import { errorMsg, infoMsg, successMsg } from '@/utils/message'
+import { hasPer } from '@/utils/common'
+import EditNiveles from './editNiveles'
+import { Dialog } from 'quasar'
 
 const dialogVisible = ref(false)
 
@@ -42,6 +87,14 @@ const state = reactive({
   nivelesObj: {},
   tableData: []
 })
+
+const columns = [
+  { name: 'index', label: 'Numero de Serie', field: (row, index) => index + 1, align: 'center', style: 'width: 60px' },
+  { name: 'codn', label: 'Código', field: 'codn', align: 'center', style: 'width: 100px' },
+  { name: 'nombre', label: 'Nombre del Nivel', field: 'nombre' },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', style: 'width: 100px' },
+  { name: 'option', label: 'Funcionar', field: 'option', align: 'center', style: 'width: 200px' }
+]
 
 onMounted(() => {
   getNivelesListFun()
@@ -66,11 +119,13 @@ const editNivelesFun = (row) => {
 
 // Eliminar Nivel
 const delNivelesFun = (id, name) => {
-  ElMessageBox.confirm('Confirmar para eliminar nivel 【' + name + '】？', 'Pista', {
-    confirmButtonText: 'Seguro',
-    cancelButtonText: 'Cancelar',
-    type: 'warning'
-  }).then(() => {
+  Dialog.create({
+    title: 'Confirmar',
+    message: `Confirmar para eliminar nivel 【${name}】？`,
+    ok: { label: 'Seguro', color: 'primary' },
+    cancel: { label: 'Cancelar', color: 'grey-5' },
+    color: 'warning'
+  }).onOk(() => {
     delNiveles(id).then(res => {
       if (res.success) {
         successMsg(res.data)
@@ -79,11 +134,17 @@ const delNivelesFun = (id, name) => {
         errorMsg(res.msg)
       }
     })
-  }).catch(() => {
+  }).onCancel(() => {
     infoMsg('Operacion Cancelada')
   })
 }
 </script>
 
 <style scoped>
+.searchDiv {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
 </style>

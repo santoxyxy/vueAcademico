@@ -1,92 +1,155 @@
 <template>
   <div>
-    <el-dialog title="Registro Masivo de Notas" v-model="dialogVisible" width="800px" @close="closeFun">
-      <el-alert title="Ingrese las notas para todos los estudiantes del paralelo" type="info" :closable="false" style="margin-bottom: 15px;"></el-alert>
-      
-      <el-form :model="state.filters" label-width="150px" style="margin-bottom: 20px;">
-        <el-row :gutter="10">
-          <el-col :span="12">
-            <el-form-item label="Código Materia">
-              <el-input v-model="state.filters.codmat" placeholder="MAT101"></el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Código Ítem">
-              <el-input-number v-model="state.filters.codi" :min="1" style="width: 100%;"></el-input-number>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="10">
-          <el-col :span="12">
-            <el-form-item label="Código Paralelo">
-              <el-input-number v-model="state.filters.coda" :min="1" style="width: 100%;"></el-input-number>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="Gestión">
-              <el-input-number v-model="state.filters.gestion" :min="2020" :max="2050" style="width: 100%;"></el-input-number>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-button type="primary" @click="addRow">+ Agregar Estudiante</el-button>
-      </el-form>
+    <q-dialog v-model="dialogVisible" persistent>
+      <q-card style="min-width: 700px; max-width: 800px;">
+        <q-card-section>
+          <div class="text-h6">Registro Masivo de Notas</div>
+        </q-card-section>
 
-      <el-table :data="state.notasList" border max-height="400px">
-        <el-table-column label="ID Usuario" width="120">
-          <template #default="scope">
-            <el-input-number v-model="scope.row.idusuario" :min="1" size="small" style="width: 100%;"></el-input-number>
-          </template>
-        </el-table-column>
-        <el-table-column label="Nota (0-100)" width="120">
-          <template #default="scope">
-            <el-input-number v-model="scope.row.nota" :min="0" :max="100" size="small" style="width: 100%;"></el-input-number>
-          </template>
-        </el-table-column>
-        <el-table-column label="Código Modalidad" width="150">
-          <template #default="scope">
-            <el-input-number v-model="scope.row.coddm" :min="1" size="small" style="width: 100%;"></el-input-number>
-          </template>
-        </el-table-column>
-        <el-table-column label="Código Programa" width="150">
-          <template #default="scope">
-            <el-input-number v-model="scope.row.codp" :min="1" size="small" style="width: 100%;"></el-input-number>
-          </template>
-        </el-table-column>
-        <el-table-column label="Acciones" width="100" align="center">
-          <template #default="scope">
-            <el-button type="danger" size="small" @click="removeRow(scope.$index)">
-              <el-icon><Delete /></el-icon>
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+        <q-card-section>
+          <q-banner dense class="q-mb-md" type="info">
+            Ingrese las notas para todos los estudiantes del paralelo
+          </q-banner>
 
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="closeFun">Cancelar</el-button>
-          <el-button type="primary" @click="submitFun" :disabled="state.notasList.length === 0">
-            Guardar Todo ({{ state.notasList.length }} notas)
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
+          <q-form class="q-mb-md">
+            <q-input
+              dense
+              outlined
+              label="Código Materia"
+              v-model="state.filters.codmat"
+              placeholder="MAT101"
+              class="q-mb-sm"
+            />
+            <div class="row q-gutter-sm">
+              <div class="col-6">
+                <q-input
+                  dense
+                  outlined
+                  type="number"
+                  label="Código Ítem"
+                  v-model.number="state.filters.codi"
+                  :min="1"
+                  class="q-mb-sm"
+                />
+              </div>
+              <div class="col-6">
+                <q-input
+                  dense
+                  outlined
+                  type="number"
+                  label="Código Paralelo"
+                  v-model.number="state.filters.coda"
+                  :min="1"
+                  class="q-mb-sm"
+                />
+              </div>
+              <div class="col-6">
+                <q-input
+                  dense
+                  outlined
+                  type="number"
+                  label="Gestión"
+                  v-model.number="state.filters.gestion"
+                  :min="2020"
+                  :max="2050"
+                  class="q-mb-sm"
+                />
+              </div>
+            </div>
+
+            <q-btn
+              color="primary"
+              label="+ Agregar Estudiante"
+              @click="addRow"
+              class="q-mt-sm"
+            />
+          </q-form>
+
+          <q-table
+            :rows="state.notasList"
+            row-key="idusuario"
+            flat
+            dense
+            virtual-scroll
+            style="max-height: 400px;"
+          >
+            <q-tr v-for="(row, index) in state.notasList" :key="index">
+              <q-td>
+                <q-input
+                  dense
+                  type="number"
+                  v-model.number="row.idusuario"
+                  :min="1"
+                  placeholder="ID Usuario"
+                />
+              </q-td>
+              <q-td>
+                <q-input
+                  dense
+                  type="number"
+                  v-model.number="row.nota"
+                  :min="0"
+                  :max="100"
+                />
+              </q-td>
+              <q-td>
+                <q-input
+                  dense
+                  type="number"
+                  v-model.number="row.coddm"
+                  :min="1"
+                />
+              </q-td>
+              <q-td>
+                <q-input
+                  dense
+                  type="number"
+                  v-model.number="row.codp"
+                  :min="1"
+                />
+              </q-td>
+              <q-td>
+                <q-btn
+                  dense
+                  color="negative"
+                  icon="delete"
+                  round
+                  flat
+                  @click="removeRow(index)"
+                />
+              </q-td>
+            </q-tr>
+          </q-table>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" color="secondary" @click="closeFun" />
+          <q-btn
+            flat
+            label="Guardar Todo ({{ state.notasList.length }} notas)"
+            color="primary"
+            @click="submitFun"
+            :disable="state.notasList.length === 0"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script setup>
-import { registrarNotasMasivas } from "@/api/notas/notas";
-import { errorMsg, successMsg } from "@/utils/message";
-import { computed, reactive } from "vue";
+import { reactive, computed } from 'vue'
+import { registrarNotasMasivas } from '@/api/notas/notas'
+import { successMsg, errorMsg } from '@/utils/message'
 
 const props = defineProps({
   dialogVisible: Boolean
 })
-
 const emit = defineEmits(['update:dialogVisible', 'getList'])
 
 const dialogVisible = computed({
   get: () => props.dialogVisible,
-  set: (val) => emit('update:dialogVisible', val)
+  set: val => emit('update:dialogVisible', val)
 })
 
 const state = reactive({
@@ -104,7 +167,6 @@ const addRow = () => {
     errorMsg('Complete los filtros primero')
     return
   }
-
   state.notasList.push({
     codmat: state.filters.codmat,
     codi: state.filters.codi,
@@ -127,8 +189,9 @@ const closeFun = () => {
 }
 
 const submitFun = () => {
-  // Validar que todos tengan idusuario
-  const invalid = state.notasList.some(n => !n.idusuario || !n.coddm || !n.codp)
+  const invalid = state.notasList.some(
+    n => !n.idusuario || !n.coddm || !n.codp
+  )
   if (invalid) {
     errorMsg('Complete todos los campos requeridos')
     return
@@ -147,4 +210,7 @@ const submitFun = () => {
 </script>
 
 <style scoped>
+.q-mb-sm {
+  margin-bottom: 8px;
+}
 </style>

@@ -3,7 +3,7 @@ import request from "../../utils/request";
 //  Acceso
 export function login(data){
     return request({
-        url: '/api/auth/login',
+        url: '/auth/login',
         method: 'post',
         data
     })
@@ -12,7 +12,7 @@ export function login(data){
 // Obtener código de verificación
 export function getVerifyCode(params){
     return request({
-        url: '/api/auth/code',
+        url: '/auth/code',
         method: 'get',
         params
     })

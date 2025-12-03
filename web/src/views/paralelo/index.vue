@@ -1,39 +1,45 @@
 <template>
-  <div>
-    <div class="searchDiv">
-      <el-input class="searchInput" v-model="state.blurry" placeholder="Por favor ingrese un nombre de paralelo" clearable></el-input>
-      <el-button type="primary" @click="getParaleloListFun">Consulta</el-button>
-      <el-button v-if="hasPer('paralelo:add')" @click="editParaleloFun" style="float: right;">Nuevo</el-button>
+  <q-page padding class="q-pa-md">
+    <div class="row q-col-gutter-md q-mb-md">
+      <q-input filled v-model="state.blurry" label="Ingrese un nombre de paralelo" class="col"></q-input>
+      <q-btn color="primary" label="Consulta" @click="getParaleloListFun"></q-btn>
+      <q-btn v-if="hasPer('paralelo:add')" color="secondary" label="Nuevo" @click="editParaleloFun" class="q-ml-md"></q-btn>
     </div>
-    <el-table :data="state.tableData" row-key="codp" border height="calc(100vh - 180px)" max-height="calc(100vh - 180px)">
-      <el-table-column label="Numero de Serie" type="index" width="60"></el-table-column>
-      <el-table-column label="Código" prop="codp" width="100"></el-table-column>
-      <el-table-column label="Nombre del Paralelo" prop="nombre"></el-table-column>
-      <el-table-column label="Estado" prop="estado" width="100" align="center">
-        <template #default="scope">
-          <el-tag :type="scope.row.estado === 1 ? 'success' : 'danger'">
-            {{ scope.row.estado === 1 ? 'Activo' : 'Inactivo' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="Funcionar" prop="option" width="200px" align="center">
-        <template #default="scope">
-          <el-button v-if="hasPer('paralelo:edit')" type="primary" @click="editParaleloFun(JSON.parse(JSON.stringify(scope.row)))">Editar</el-button>
-          <el-button v-if="hasPer('paralelo:del')" type="danger" @click="delParaleloFun(scope.row.codp, scope.row.nombre)">Borrar</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <edit-paralelo v-model:dialog-visible="dialogVisible" :paralelo-obj="state.paraleloObj" @get-list="getParaleloListFun"></edit-paralelo>
-  </div>
+
+    <q-table
+      title="Lista de Paralelos"
+      :rows="state.tableData"
+      row-key="codp"
+      :columns="columns"
+      flat
+      bordered
+    >
+      <template v-slot:body-cell-estado="props">
+        <q-chip :color="props.row.estado === 1 ? 'green' : 'red'" text-color="white">
+          {{ props.row.estado === 1 ? 'Activo' : 'Inactivo' }}
+        </q-chip>
+      </template>
+
+      <template v-slot:body-cell-option="props">
+        <q-btn v-if="hasPer('paralelo:edit')" color="primary" label="Editar" size="sm"
+          @click="editParaleloFun(props.row)">
+        </q-btn>
+        <q-btn v-if="hasPer('paralelo:del')" color="negative" label="Borrar" size="sm" class="q-ml-sm"
+          @click="delParaleloFun(props.row.codp, props.row.nombre)">
+        </q-btn>
+      </template>
+    </q-table>
+
+    <edit-paralelo v-model:dialog-visible="dialogVisible" :paralelo-obj="state.paraleloObj" @get-list="getParaleloListFun" />
+  </q-page>
 </template>
 
 <script setup>
-import { queryParaleloTable, delParalelo } from "../../api/paralelo/paralelo";
-import { errorMsg, infoMsg, successMsg } from "../../utils/message";
-import { hasPer } from "../../utils/common";
-import editParalelo from "./editParalelo";
-import { onMounted, reactive, ref } from "vue";
-import { ElMessageBox } from "element-plus";
+import { ref, reactive, onMounted } from 'vue'
+import { hasPer } from '../../utils/common'
+import { queryParaleloTable, delParalelo } from '../../api/paralelo/paralelo'
+import { errorMsg, successMsg, infoMsg } from '../../utils/message'
+import editParalelo from './editParalelo'
 
 const dialogVisible = ref(false)
 
@@ -43,34 +49,35 @@ const state = reactive({
   tableData: []
 })
 
+const columns = [
+  { name: 'index', label: 'N°', field: (row, index) => index + 1, align: 'center' },
+  { name: 'codp', label: 'Código', field: 'codp', align: 'center' },
+  { name: 'nombre', label: 'Nombre del Paralelo', field: 'nombre' },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center' },
+  { name: 'option', label: 'Acciones', field: 'option', align: 'center' }
+]
+
 onMounted(() => {
   getParaleloListFun()
 })
 
-// Obtener lista de paralelos
 const getParaleloListFun = () => {
   queryParaleloTable({ blurry: state.blurry }).then(res => {
     if (res.success) {
-      state.tableData = res.data
+      state.tableData = res.data.records
     } else {
       errorMsg(res.msg)
     }
   })
 }
 
-// Editar Paralelo
 const editParaleloFun = (row) => {
   dialogVisible.value = true
-  state.paraleloObj = row.codp ? row : {}
+  state.paraleloObj = row?.codp ? row : {}
 }
 
-// Eliminar Paralelo
 const delParaleloFun = (id, name) => {
-  ElMessageBox.confirm('Confirmar para eliminar paralelo 【' + name + '】？', 'Pista', {
-    confirmButtonText: 'Seguro',
-    cancelButtonText: 'Cancelar',
-    type: 'warning'
-  }).then(() => {
+  if (confirm(`Confirmar para eliminar paralelo 【${name}】？`)) {
     delParalelo(id).then(res => {
       if (res.success) {
         successMsg(res.data)
@@ -79,9 +86,9 @@ const delParaleloFun = (id, name) => {
         errorMsg(res.msg)
       }
     })
-  }).catch(() => {
-    infoMsg('Operacion Cancelada')
-  })
+  } else {
+    infoMsg('Operación Cancelada')
+  }
 }
 </script>
 

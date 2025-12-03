@@ -2,135 +2,140 @@
   <div class="app-container">
     <!-- Filtros de búsqueda -->
     <div class="searchDiv">
-      <el-input 
-        v-model="state.blurry" 
+      <q-input
+        v-model="state.blurry"
         placeholder="Buscar por materia o docente"
         clearable
         style="width: 250px"
         @keyup.enter="getDictaListFun"
       />
-      
-      <el-select 
-        v-model="state.gestion" 
+
+      <q-select
+        v-model="state.gestion"
+        :options="gestiones"
         placeholder="Gestión"
         clearable
         style="width: 120px"
-      >
-        <el-option 
-          v-for="year in gestiones" 
-          :key="year" 
-          :label="year" 
-          :value="year"
-        />
-      </el-select>
+      />
 
-      <el-input 
-        v-model="state.codmat" 
+      <q-input
+        v-model="state.codmat"
         placeholder="Código Materia"
         clearable
         style="width: 150px"
       />
 
-      <el-input-number 
-        v-model="state.codn" 
+      <q-input
+        v-model.number="state.codn"
+        type="number"
         placeholder="Nivel"
         :min="1"
         :max="10"
-        controls-position="right"
         style="width: 120px"
       />
 
-      <el-button type="primary" icon="Search" @click="getDictaListFun">
-        Buscar
-      </el-button>
-      
-      <el-button type="success" icon="Plus" @click="addDicta" v-if="hasPer(['ROLE_ADMIN'])">
-        Nueva Asignación
-      </el-button>
+      <q-btn
+        color="primary"
+        icon="search"
+        label="Buscar"
+        @click="getDictaListFun"
+      />
+
+      <q-btn
+        color="positive"
+        icon="add"
+        label="Nueva Asignación"
+        @click="addDicta"
+        v-if="hasPer(['ROLE_ADMIN'])"
+      />
     </div>
 
     <!-- Tabla -->
-    <el-table 
-      :data="state.tableData" 
-      v-loading="state.loading" 
-      border 
-      stripe
+    <q-table
+      title="Asignaciones"
+      :rows="state.tableData"
+      :columns="columns"
+      row-key="codmat"
+      :loading="state.loading"
+      flat
+      bordered
+      dense
+      virtual-scroll
     >
-      <el-table-column type="index" label="#" width="60" align="center" />
-      
-      <el-table-column prop="gestion" label="Gestión" width="100" align="center" />
-      
-      <el-table-column prop="codmat" label="Código" width="100" />
-      
-      <el-table-column prop="nombreMateria" label="Materia" min-width="200" show-overflow-tooltip />
-      
-      <el-table-column prop="nombreNivel" label="Nivel" width="100" />
-      
-      <el-table-column prop="nombreParalelo" label="Paralelo" width="100" align="center" />
-      
-      <el-table-column prop="codp" label="Periodo" width="90" align="center">
-        <template #default="{ row }">
-          <el-tag :type="row.codp === 1 ? 'success' : 'warning'" size="small">
-            {{ row.codp }}° Periodo
-          </el-tag>
-        </template>
-      </el-table-column>
-      
-      <el-table-column prop="nombreDocente" label="Docente" min-width="180" show-overflow-tooltip />
-      
-      <el-table-column prop="tipoDocente" label="Tipo" width="100">
-        <template #default="{ row }">
-          <el-tag :type="getDocenteTagType(row.tipoDocente)" size="small">
-            {{ row.tipoDocente }}
-          </el-tag>
-        </template>
-      </el-table-column>
+      <template v-slot:body-cell-codp="props">
+        <q-td :props="props">
+          <q-chip
+            :color="props.row.codp === 1 ? 'green' : 'orange'"
+            text-color="white"
+            dense
+            outline
+          >
+            {{ props.row.codp }}° Periodo
+          </q-chip>
+        </q-td>
+      </template>
 
-      <el-table-column prop="emailDocente" label="Email" min-width="180" show-overflow-tooltip>
-        <template #default="{ row }">
-          <el-link :href="`mailto:${row.emailDocente}`" type="primary" :underline="false">
-            {{ row.emailDocente }}
-          </el-link>
-        </template>
-      </el-table-column>
+      <template v-slot:body-cell-tipoDocente="props">
+        <q-td :props="props">
+          <q-chip
+            :color="getDocenteTagType(props.row.tipoDocente)"
+            text-color="white"
+            dense
+            outline
+          >
+            {{ props.row.tipoDocente }}
+          </q-chip>
+        </q-td>
+      </template>
 
-      <el-table-column label="Operaciones" width="180" align="center" fixed="right">
-        <template #default="{ row }">
-          <el-button 
-            type="primary" 
-            size="small" 
-            icon="Edit"
-            @click="editDicta(row)"
+      <template v-slot:body-cell-emailDocente="props">
+        <q-td :props="props">
+          <q-btn
+            :label="props.row.emailDocente"
+            color="primary"
+            flat
+            unelevated
+            round
+            href="mailto:{{ props.row.emailDocente }}"
+          />
+        </q-td>
+      </template>
+
+      <template v-slot:body-cell-actions="props">
+        <q-td :props="props">
+          <q-btn
+            color="primary"
+            dense
+            size="sm"
+            icon="edit"
+            label="Editar"
+            @click="editDicta(props.row)"
             v-if="hasPer(['ROLE_ADMIN', 'ROLE_DOCENTE'])"
-          >
-            Editar
-          </el-button>
-          <el-popconfirm
-            title="¿Eliminar esta asignación?"
-            @confirm="delDicta(row)"
+          />
+          <q-btn
+            color="negative"
+            dense
+            size="sm"
+            icon="delete"
+            label="Eliminar"
+            @click="delDicta(props.row)"
             v-if="hasPer(['ROLE_ADMIN'])"
-          >
-            <template #reference>
-              <el-button type="danger" size="small" icon="Delete">
-                Eliminar
-              </el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
+          />
+        </q-td>
+      </template>
+    </q-table>
 
     <!-- Paginación -->
-    <Pagination 
-      :total="state.total" 
-      :page="state.current" 
-      :limit="state.size" 
-      @pagination="getDictaListFun"
+    <q-pagination
+      v-model="state.current"
+      :max="Math.ceil(state.total / state.size)"
+      color="primary"
+      @update:model-value="getDictaListFun"
     />
 
     <!-- Dialog -->
-    <EditDicta 
-      v-model:dialogVisible="dialogVisible" 
+    <EditDicta
+      v-model:dialogVisible="dialogVisible"
       :dictaObj="currentDicta"
       @get-list="getDictaListFun"
     />
@@ -142,7 +147,6 @@ import { reactive, ref, onMounted } from 'vue'
 import { queryDictaTable, delDicta as delDictaApi } from '@/api/dicta/dicta'
 import { errorMsg, successMsg } from '@/utils/message'
 import { hasPer } from '@/utils/common'
-import Pagination from '@/components/Pagination.vue'
 import EditDicta from './editDicta.vue'
 
 const state = reactive({
@@ -160,10 +164,23 @@ const state = reactive({
 const dialogVisible = ref(false)
 const currentDicta = ref({})
 
-// Generar últimos 5 años para el select
-const gestiones = ref(
-  Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
-)
+// Columnas de QTable
+const columns = [
+  { name: 'index', label: '#', field: (row, idx) => idx + 1, align: 'center', sortable: false },
+  { name: 'gestion', label: 'Gestión', field: 'gestion', align: 'center' },
+  { name: 'codmat', label: 'Código', field: 'codmat' },
+  { name: 'nombreMateria', label: 'Materia', field: 'nombreMateria' },
+  { name: 'nombreNivel', label: 'Nivel', field: 'nombreNivel' },
+  { name: 'nombreParalelo', label: 'Paralelo', field: 'nombreParalelo', align: 'center' },
+  { name: 'codp', label: 'Periodo', field: 'codp', align: 'center' },
+  { name: 'nombreDocente', label: 'Docente', field: 'nombreDocente' },
+  { name: 'tipoDocente', label: 'Tipo', field: 'tipoDocente' },
+  { name: 'emailDocente', label: 'Email', field: 'emailDocente' },
+  { name: 'actions', label: 'Operaciones', field: 'actions', align: 'center' }
+]
+
+// Generar últimos 5 años
+const gestiones = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
 
 const getDictaListFun = (obj) => {
   if (obj && obj.page) state.current = obj.page
@@ -211,7 +228,7 @@ const delDicta = (row) => {
     codmat: row.codmat,
     gestion: row.gestion
   }
-  
+
   delDictaApi(params).then((res) => {
     if (res.success) {
       successMsg(res.data)
@@ -224,11 +241,11 @@ const delDicta = (row) => {
 
 const getDocenteTagType = (tipo) => {
   const types = {
-    'Titular': 'success',
-    'Invitado': 'warning',
-    'Auxiliar': 'info'
+    'Titular': 'green',
+    'Invitado': 'orange',
+    'Auxiliar': 'blue'
   }
-  return types[tipo] || ''
+  return types[tipo] || 'grey'
 }
 
 onMounted(() => {

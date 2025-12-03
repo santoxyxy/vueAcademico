@@ -1,59 +1,58 @@
 <template>
-  <el-dialog 
-    :title="state.title" 
-    v-model="visible" 
-    width="500px"
-    :close-on-click-modal="false" 
-    @opened="openFun"
-  >
-    <el-form 
-      :model="state.form" 
-      :rules="state.rules" 
-      ref="formRef" 
-      label-width="140px"
-    >
-      <el-form-item label="Nombre Detalle" prop="nombre">
-        <el-input 
-          v-model="state.form.nombre" 
+  <q-dialog v-model="visible" persistent>
+    <q-card style="min-width: 400px; max-width: 500px;">
+      <q-card-section class="text-h6">
+        {{ state.title }}
+      </q-card-section>
+
+      <q-form ref="formRef" @submit.prevent="submitForm" class="q-gutter-md">
+        <!-- Nombre Detalle -->
+        <q-input
+          v-model="state.form.nombre"
+          label="Nombre Detalle"
           placeholder="Ingrese el nombre del detalle"
+          :rules="[val => !!val || 'El nombre es obligatorio']"
+          outlined
         />
-      </el-form-item>
 
-      <el-form-item label="Modalidad Padre" prop="codm">
-        <el-select 
-          v-model="state.form.codm" 
+        <!-- Modalidad Padre -->
+        <q-select
+          v-model="state.form.codm"
+          label="Modalidad Padre"
           placeholder="Seleccione modalidad"
-          filterable
-          style="width: 100%"
-        >
-          <el-option 
-            v-for="item in state.modalidadList" 
-            :key="item.codm" 
-            :label="item.nombre" 
-            :value="item.codm"
-          />
-        </el-select>
-      </el-form-item>
+          :options="state.modalidadList.map(m => ({ label: m.nombre, value: m.codm }))"
+          emit-value
+          map-options
+          :rules="[val => !!val || 'Debe seleccionar una modalidad']"
+          outlined
+        />
 
-      <el-form-item label="Estado" prop="estado">
-        <el-radio-group v-model="state.form.estado">
-          <el-radio :value="1">Activo</el-radio>
-          <el-radio :value="0">Inactivo</el-radio>
-        </el-radio-group>
-      </el-form-item>
-    </el-form>
+        <!-- Estado -->
+        <q-option-group
+          v-model="state.form.estado"
+          label="Estado"
+          type="radio"
+          inline
+          :options="estadoOptions"
+          :rules="[val => val !== null || 'El estado es obligatorio']"
+        />
+      </q-form>
 
-    <template #footer>
-      <el-button @click="resetForm(formRef)">Reiniciar</el-button>
-      <el-button type="primary" :loading="isLoading" @click="submitForm">
-        Guardar
-      </el-button>
-    </template>
-  </el-dialog>
+      <q-card-actions align="right">
+        <q-btn flat label="Reiniciar" color="grey" @click="resetForm(formRef)" />
+        <q-btn
+          label="Guardar"
+          color="primary"
+          :loading="isLoading"
+          @click="submitForm"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import { editDmodalidad } from '@/api/dmodalidad/dmodalidad'
 import { errorMsg, successMsg } from '@/utils/message'
 import { resetForm } from '@/utils/common'
@@ -67,11 +66,16 @@ const emit = defineEmits(['update:dialogVisible', 'get-list'])
 
 const visible = computed({
   get: () => props.dialogVisible,
-  set: (val) => emit('update:dialogVisible', val)
+  set: val => emit('update:dialogVisible', val)
 })
 
 const isLoading = ref(false)
 const formRef = ref()
+
+const estadoOptions = [
+  { label: 'Activo', value: 1 },
+  { label: 'Inactivo', value: 0 }
+]
 
 const state = reactive({
   title: 'Nuevo Detalle',
@@ -81,20 +85,14 @@ const state = reactive({
     codm: null,
     estado: 1
   },
-  rules: {
-    nombre: [{ required: true, message: 'El nombre es obligatorio', trigger: 'blur' }],
-    codm: [{ required: true, message: 'Debe seleccionar una modalidad', trigger: 'change' }],
-    estado: [{ required: true, message: 'El estado es obligatorio', trigger: 'change' }]
-  },
-  modalidadList: [] // Deberías llenar esto con una llamada API a /sys/modalidad/list
+  modalidadList: []
 })
 
 const openFun = () => {
   resetForm(formRef.value)
   state.title = 'Nuevo Detalle'
   isLoading.value = false
-  
-  // Cargar modalidades padre (necesitarás crear ese endpoint)
+
   getModalidadList()
 
   if (props.dmodalidadObj.coddm) {
@@ -105,9 +103,8 @@ const openFun = () => {
   }
 }
 
-// TODO: Implementar llamada real a API de modalidades
+// Ejemplo de datos de modalidades; reemplazar con API real
 const getModalidadList = () => {
-  // Ejemplo temporal - reemplazar con llamada real
   state.modalidadList = [
     { codm: 1, nombre: 'Presencial' },
     { codm: 2, nombre: 'Virtual' },
@@ -116,10 +113,10 @@ const getModalidadList = () => {
 }
 
 const submitForm = () => {
-  formRef.value.validate((valid) => {
+  formRef.value.validate().then(valid => {
     if (valid) {
       isLoading.value = true
-      editDmodalidad(state.form).then((res) => {
+      editDmodalidad(state.form).then(res => {
         if (res.success) {
           successMsg(res.data)
           visible.value = false
@@ -132,4 +129,16 @@ const submitForm = () => {
     }
   })
 }
+
+// Abrir diálogo automáticamente al cambiar prop
+watch(() => props.dialogVisible, val => {
+  if (val) openFun()
+})
 </script>
+
+<style scoped>
+.q-card-section {
+  display: flex;
+  flex-direction: column;
+}
+</style>

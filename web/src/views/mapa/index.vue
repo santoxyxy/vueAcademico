@@ -1,76 +1,87 @@
 <template>
-  <div>
+  <div class="q-pa-md">
+    <!-- Barra de búsqueda -->
     <div class="searchDiv">
-      <el-input 
-        class="searchInput" 
-        v-model="state.blurry" 
-        placeholder="Buscar por materia o paralelo" 
+      <q-input
+        v-model="state.blurry"
+        placeholder="Buscar por materia o paralelo"
         clearable
+        @keyup.enter="getMapaListFun"
+        class="searchInput"
       />
-      <el-select 
-        v-model="state.gestion" 
-        placeholder="Gestión" 
+
+      <q-select
+        v-model="state.gestion"
+        :options="state.gestionOptions"
+        label="Gestión"
         style="width: 150px"
-        @change="getMapaListFun"
-      >
-        <el-option
-          v-for="year in state.gestionOptions"
-          :key="year"
-          :label="year"
-          :value="year"
-        />
-      </el-select>
-      <el-button type="primary" @click="getMapaListFun">Consulta</el-button>
-      <el-button 
-        v-if="hasPer('mapa:add')" 
-        @click="editMapaFun" 
-        style="float: right;"
+        emit-value
+        map-options
+        @update:model-value="getMapaListFun"
+      />
+
+      <q-btn color="primary" @click="getMapaListFun">
+        Consulta
+      </q-btn>
+
+      <q-btn
+        color="positive"
+        v-if="hasPer('mapa:add')"
+        @click="editMapaFun()"
+        style="margin-left: auto;"
       >
         Nuevo
-      </el-button>
+      </q-btn>
     </div>
 
-    <el-table 
-      :data="state.tableData" 
-      border 
-      height="calc(100vh - 180px)"
+    <!-- Tabla -->
+    <q-table
+      :rows="state.tableData"
+      :columns="columns"
+      row-key="codmat"
+      flat
+      bordered
+      :pagination="{ rowsPerPage: 10 }"
+      virtual-scroll
+      style="height: calc(100vh - 180px)"
     >
-      <el-table-column label="Código Materia" prop="codmat" width="120" />
-      <el-table-column label="Materia" prop="nombreMateria" />
-      <el-table-column label="Paralelo" prop="nombreParalelo" width="100" />
-      <el-table-column label="Nivel" prop="nombreNivel" width="100" />
-      <el-table-column label="Gestión" prop="gestion" width="100" align="center" />
-      <el-table-column label="Estado" prop="estado" width="100" align="center">
-        <template #default="scope">
-          <el-tag :type="scope.row.estado === 1 ? 'success' : 'danger'">
-            {{ scope.row.estado === 1 ? 'Activo' : 'Inactivo' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="Funcionar" width="180" align="center">
-        <template #default="scope">
-          <el-button 
-            v-if="hasPer('mapa:edit')" 
-            type="primary" 
-            @click="editMapaFun(JSON.parse(JSON.stringify(scope.row)))"
-          >
-            Editar
-          </el-button>
-          <el-button 
-            v-if="hasPer('mapa:del')" 
-            type="danger" 
-            @click="delMapaFun(scope.row)"
-          >
-            Borrar
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <!-- Estado -->
+      <template v-slot:body-cell-estado="props">
+        <q-td :props="props">
+          <q-badge
+            :color="props.row.estado === 1 ? 'positive' : 'negative'"
+            :label="props.row.estado === 1 ? 'Activo' : 'Inactivo'"
+          />
+        </q-td>
+      </template>
+
+      <!-- Acciones -->
+      <template v-slot:body-cell-actions="props">
+        <q-td :props="props" class="q-gutter-sm">
+          <q-btn
+            color="primary"
+            flat
+            dense
+            label="Editar"
+            v-if="hasPer('mapa:edit')"
+            @click="editMapaFun({ ...props.row })"
+          />
+          <q-btn
+            color="negative"
+            flat
+            dense
+            label="Borrar"
+            v-if="hasPer('mapa:del')"
+            @click="delMapaFun(props.row)"
+          />
+        </q-td>
+      </template>
+    </q-table>
 
     <!-- Modal de edición -->
-    <edit-mapa 
-      v-model:dialog-visible="dialogVisible" 
-      :mapa-obj="state.mapaObj" 
+    <edit-mapa
+      v-model:dialog-visible="dialogVisible"
+      :mapa-obj="state.mapaObj"
       :gestion="state.gestion"
       @get-list="getMapaListFun"
     />
@@ -78,12 +89,12 @@
 </template>
 
 <script setup>
-import { getMapaTable, delMapa } from "../../api/mapa/mapa";
-import { errorMsg, infoMsg, successMsg } from "../../utils/message";
-import { hasPer } from "../../utils/common";
-import editMapa from "./editMapa";
-import { onMounted, reactive, ref } from "vue";
-import { ElMessageBox } from "element-plus";
+import { ref, reactive, onMounted } from 'vue'
+import { getMapaTable, delMapa } from '../../api/mapa/mapa'
+import { errorMsg, infoMsg, successMsg } from '../../utils/message'
+import { hasPer } from '../../utils/common'
+import EditMapa from './editMapa.vue'
+import { Dialog } from 'quasar'
 
 const state = reactive({
   blurry: '',
@@ -91,66 +102,74 @@ const state = reactive({
   tableData: [],
   mapaObj: {},
   gestionOptions: []
-});
+})
 
-const dialogVisible = ref(false);
+const dialogVisible = ref(false)
 
 onMounted(() => {
-  generateGestionOptions();
-  getMapaListFun();
-});
+  generateGestionOptions()
+  getMapaListFun()
+})
 
 // Generar opciones de gestión
 const generateGestionOptions = () => {
-  const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear()
   for (let i = -2; i <= 2; i++) {
-    state.gestionOptions.push(currentYear + i);
+    state.gestionOptions.push(currentYear + i)
   }
-};
+}
+
+// Columnas de tabla
+const columns = [
+  { name: 'codmat', label: 'Código Materia', field: 'codmat', align: 'left' },
+  { name: 'nombreMateria', label: 'Materia', field: 'nombreMateria', align: 'left' },
+  { name: 'nombreParalelo', label: 'Paralelo', field: 'nombreParalelo', align: 'left' },
+  { name: 'nombreNivel', label: 'Nivel', field: 'nombreNivel', align: 'left' },
+  { name: 'gestion', label: 'Gestión', field: 'gestion', align: 'center' },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center' },
+  { name: 'actions', label: 'Funcionar', field: 'actions', align: 'center' }
+]
 
 // Obtener lista
 const getMapaListFun = () => {
-  getMapaTable({ 
+  getMapaTable({
     blurry: state.blurry,
-    gestion: state.gestion 
+    gestion: state.gestion
   }).then(res => {
     if (res.success) {
-      state.tableData = res.data.records || res.data;
+      state.tableData = res.data.records || res.data
     } else {
-      errorMsg(res.msg);
+      errorMsg(res.msg)
     }
-  });
-};
+  })
+}
 
-// Editar
+// Editar / Nuevo
 const editMapaFun = (row) => {
-  dialogVisible.value = true;
-  state.mapaObj = row ? row : {};
-};
+  state.mapaObj = row ? row : {}
+  dialogVisible.value = true
+}
 
 // Eliminar
 const delMapaFun = (row) => {
-  ElMessageBox.confirm(
-    `Confirmar eliminar asignación ${row.nombreMateria} - ${row.nombreParalelo}？`, 
-    'Pista', 
-    {
-      confirmButtonText: 'Seguro',
-      cancelButtonText: 'Cancelar',
-      type: 'warning'
-    }
-  ).then(() => {
+  Dialog.create({
+    title: 'Confirmar eliminación',
+    message: `Confirmar eliminar asignación ${row.nombreMateria} - ${row.nombreParalelo}?`,
+    cancel: true,
+    persistent: true
+  }).onOk(() => {
     delMapa(row.codmat, row.codpar, row.gestion).then(res => {
       if (res.success) {
-        successMsg(res.data);
-        getMapaListFun();
+        successMsg(res.data)
+        getMapaListFun()
       } else {
-        errorMsg(res.msg);
+        errorMsg(res.msg)
       }
-    });
-  }).catch(() => {
-    infoMsg('Operacion Cancelada');
-  });
-};
+    })
+  }).onCancel(() => {
+    infoMsg('Operación cancelada')
+  })
+}
 </script>
 
 <style scoped>
@@ -158,6 +177,7 @@ const delMapaFun = (row) => {
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
+  align-items: center;
 }
 
 .searchInput {

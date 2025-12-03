@@ -14,13 +14,13 @@ router.beforeEach((to, from, next) => {
     if (store.token){
         //  Retorno forzado cuando el usuario cambia manualmente a la ruta raíz
         //  Evitar que el enrutamiento salte de la página principal actual
-        if (to.path === '/'){
-            router.go(-1)
-        }
+       // if (to.path === '/'){
+        //    router.go(-1)
+      //  }
         // Si inicias sesión repetidamente
         if (to.path === '/login'){
             //  luego salta directamente a la página de inicio
-            next({path: '/Layout'})
+            next({path: '/home'})
         } else {
             //  Si la lista del menú de usuario no ha sido extraída
             if (!store.isLoadMenu){
@@ -66,6 +66,7 @@ router.beforeEach((to, from, next) => {
 export function loadMenus(next, to){
     const store = useStore()
     queryAllMenu().then(res => {
+        console.log("MENUS QUE DEVUELVE EL BACKEND -->", res.data)  // <--- AQUI
         if (res.success){
             if (res.data.length > 0){
                 //  Almacenar en caché todos los menús en la tienda
@@ -100,16 +101,16 @@ export function addRoute(){
         console.info(routers)
         routers.forEach(item => {
             if (item.path){
-                let componentPath = item.component;
-                
-                // ➡️ AÑADIR .vue SI EL VALOR NO LO TRAE
-                if (componentPath && !componentPath.endsWith('.vue')) {
-                     componentPath = componentPath + '.vue';
+                let componentPath = item.component;                                
+                if (componentPath && !componentPath.endsWith('.vue')) { 
+                     // Aseguramos que la variable local tenga el formato correcto
+                    componentPath = componentPath + '.vue';
                 }
                 router.addRoute('LayoutView', {
                     path: item.path,
                     name: item.name,
-                    component: item.component != null ? () => import(`@/views/${item.component}`) : null
+                    // 🚨 USAMOS componentPath EN LA RUTA DINÁMICA
+                    component: item.component != null ? () => import(`@/views/${componentPath}`) : null
                 })
             }
         })

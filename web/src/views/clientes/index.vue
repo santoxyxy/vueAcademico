@@ -1,88 +1,131 @@
 <template>
-  <q-layout view="hHh lpR fFf">
-    <q-page-container>
-      
-      <div class="q-pa-md">
-        <div class="searchDiv">
-          <q-input class="searchInput" v-model="state.blurry" placeholder="Por favor ingrese nombre de usuario o apodo" clearable></q-input>
-          <q-button type="primary" @click="getUserListFun">Consulta</q-button>
-        </div>
-        <q-table
-          flat
-          bordered
-          ref="tableRef"
-          title="Clientes"
-          :rows="state.tableData"
-          :columns="columns"
-          row-key="id"
-          v-model:pagination="pagination"
-          :loading="loading"
-          :filter="filter"
-          binary-state-sort
-          @request="onRequest"
-        >
-          <template v-slot:top-right>
-            <q-input borderless dense debounce="300" v-model="state.blurry" placeholder="Buscar">
-              <template v-slot:append>
-                <q-icon name="search" @click="getClientesListFun" />
-              </template>
-            </q-input>
-          </template>
-        </q-table>
-        <q-pagination
-          v-model="pagination.page"
-          :max="Math.ceil(state.total / pagination.rowsPerPage)" 
-          @update:model-value="getClientesListFun"
+  <div class="app-container">
+
+    <!-- 🔍 Barra de búsqueda -->
+    <div class="toolbar">
+      <q-input
+        v-model="state.blurry"
+        outlined
+        label="Ingrese nombre o ID de cliente"
+        clearable
+        class="search-input"
+        @keyup.enter="getClientesListFun"
+      />
+
+      <q-btn
+        color="primary"
+        label="Consultar"
+        @click="getClientesListFun"
+      />
+
+      <q-btn
+        v-if="hasPer('clientes:add')"
+        color="primary"
+        label="Nuevo Cliente"
+        class="q-ml-auto"
+        @click="editClienteFun"
+      />
+    </div>
+
+    <!-- 🧾 Tabla -->
+    <q-table
+      title="Clientes"
+      :rows="state.tableData"
+      row-key="id"
+      :loading="loading"
+      flat
+      bordered
+      dense
+    >
+      <template v-slot:body-cell-Compañia="props">
+        {{ props.row.Compañia }}
+      </template>
+      <template v-slot:body-cell-Apellidos="props">
+        {{ props.row.Apellidos }}
+      </template>
+      <template v-slot:body-cell-Nombre="props">
+        {{ props.row.Nombre }}
+      </template>
+      <template v-slot:body-cell-Direccion="props">
+        {{ props.row.Direccion }}
+      </template>
+      <template v-slot:body-cell-Ciudad="props">
+        {{ props.row.Ciudad }}
+      </template>
+
+      <!-- ACCIONES -->
+      <template v-slot:body-cell-acciones="props">
+        <q-btn
+          size="sm"
+          color="primary"
+          label="Editar"
+          class="q-mr-sm"
+          @click="editClienteFun(props.row)"
         />
-      </div>
-    </q-page-container>
-  </q-layout>
+        <q-btn
+          size="sm"
+          color="negative"
+          label="Eliminar"
+          @click="delClienteFun(props.row.id, props.row.Nombre)"
+        />
+      </template>
+    </q-table>
+
+    <!-- 📄 Paginación -->
+    <q-pagination
+      v-model="state.current"
+      :max="Math.ceil(state.total / state.size)"
+      max-pages="7"
+      boundary-numbers
+      class="q-mt-md"
+      @update:model-value="getClientesListFun"
+    />
+
+    <!-- ✏ Modal de edición -->
+    <edit-cliente
+      v-model:dialog-visible="dialogVisible"
+      :cliente-obj="state.clienteObj"
+      @get-list="getClientesListFun"
+    />
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { getClientesList } from '../../api/clientes/clientes';
-import { errorMsg } from '../../utils/message';
+import { ref, reactive, onMounted } from "vue";
+import { getClientesList, delCliente } from "../../api/clientes/clientes";
+import { errorMsg, infoMsg, successMsg } from "../../utils/message";
+import { hasPer } from "../../utils/common";
+import { Dialog } from "quasar";
+import editCliente from "./editCliente.vue";
 
 const state = reactive({
-  blurry: '',
+  blurry: "",
   tableData: [],
+  clienteObj: {},
   current: 1,
   size: 10,
-  total: 0
+  total: 0,
 });
 
-const columns = [
-  { name: 'compania', required: true, label: 'Compañía', align: 'left', field: 'compania', sortable: true },
-  { name: 'apellidos', required: true, label: 'Apellidos', align: 'left', field: 'apellidos', sortable: true },
-  { name: 'nombre', required: true, label: 'Nombre', align: 'left', field: 'nombre', sortable: true }
-];
-
+const dialogVisible = ref(false);
 const loading = ref(false);
-const pagination = ref({
-  sortBy: 'nombre',
-  descending: false,
-  page: 1,
-  rowsPerPage: 10,
-});
 
+// 🔹 Obtener lista de clientes
 const getClientesListFun = () => {
   loading.value = true;
+
   const params = {
-    // texto a buscar
     blurry: state.blurry,
-    // tamaño 
     size: state.size,
-    // Usa la página actual de la paginación
-    currentPage: pagination.value.page 
+    currentPage: state.current,
   };
 
   getClientesList(params)
     .then((res) => {
       loading.value = false;
       if (res.success) {
-        state.tableData = res.data.records;
-        state.total = res.data.total;
+        state.tableData = res.data.records || res.data;
+        state.total = res.data.total || 0;
       } else {
         errorMsg(res.msg);
       }
@@ -92,24 +135,52 @@ const getClientesListFun = () => {
     });
 };
 
-const onRequest = (props) => {
-  const { page, rowsPerPage, sortBy, descending } = props.pagination;
-  pagination.value.sortBy = sortBy || '';
-  pagination.value.descending = descending;
-  pagination.value.page = page;
-  pagination.value.rowsPerPage = rowsPerPage;
+// 🔹 Abrir modal editar / nuevo
+const editClienteFun = (row = null) => {
+  state.clienteObj = row ? { ...row } : {};
+  dialogVisible.value = true;
+};
 
-  state.current = page; // Actualiza el estado actual
-  state.size = rowsPerPage; // Actualiza el tamaño de la página
-  console.log('estado current cliente');
-  console.log(state);
-  getClientesListFun();
-  
+// 🔹 Eliminar cliente
+const delClienteFun = (id, name) => {
+  Dialog.create({
+    title: "Confirmación",
+    message: `¿Estás seguro de eliminar el cliente ${name}?`,
+    persistent: true,
+    ok: { label: "Eliminar", color: "negative" },
+    cancel: { label: "Cancelar" },
+  }).onOk(() => {
+    delCliente({ id }).then((res) => {
+      if (res.success) {
+        successMsg(res.data);
+        getClientesListFun();
+      } else {
+        errorMsg(res.msg);
+      }
+    });
+  }).onCancel(() => {
+    infoMsg("Operación cancelada");
+  });
 };
 
 onMounted(() => {
   getClientesListFun();
-  console.log('estado cliente');
-  console.log(state);
 });
 </script>
+
+<style scoped>
+.app-container {
+  padding: 20px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.search-input {
+  width: 300px;
+}
+</style>

@@ -1,94 +1,107 @@
 <template>
-  <div>
-    <el-dialog :title="state.title" v-model="dialogVisible" width="500px" @close="closeFun">
-      <el-form :model="state.form" :rules="state.rules" ref="formRef" label-width="120px">
-        <el-form-item label="Nombre" prop="nombre">
-          <el-input v-model="state.form.nombre" placeholder="Ingrese nombre del paralelo"></el-input>
-        </el-form-item>
-        <el-form-item label="Estado" prop="estado">
-          <el-radio-group v-model="state.form.estado">
-            <el-radio :label="1">Activo</el-radio>
-            <el-radio :label="0">Inactivo</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="closeFun">Cancelar</el-button>
-          <el-button type="primary" @click="submitFun">Guardar</el-button>
-        </span>
-      </template>
-    </el-dialog>
-  </div>
+  <q-dialog v-model="dialogVisible" persistent>
+    <q-card style="min-width: 400px;">
+      <q-card-section>
+        <div class="text-h6">{{ state.title }}</div>
+      </q-card-section>
+
+      <q-card-section>
+        <q-form ref="formRef" @submit.prevent="submitFun">
+          <q-input
+            filled
+            v-model="state.form.nombre"
+            label="Nombre"
+            :rules="[val => !!val || 'Por favor ingrese nombre']"
+          ></q-input>
+
+          <q-option-group
+            v-model="state.form.estado"
+            type="radio"
+            :options="estadoOptions"
+            label="Estado"
+            class="q-mt-md"
+          ></q-option-group>
+        </q-form>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Cancelar" color="primary" v-close-popup @click="closeFun"></q-btn>
+        <q-btn flat label="Guardar" color="primary" @click="submitFun"></q-btn>
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
-import { editParalelo } from "../../api/paralelo/paralelo";
-import { errorMsg, successMsg } from "../../utils/message";
-import { computed, reactive, ref, watch } from "vue";
+import { ref, reactive, watch, computed } from 'vue'
+import { editParalelo } from '../../api/paralelo/paralelo'
+import { successMsg, errorMsg } from '../../utils/message'
 
 const props = defineProps({
   dialogVisible: Boolean,
   paraleloObj: Object
 })
 
-const emit = defineEmits(['update:dialogVisible', 'getList'])
+const emit = defineEmits(['update:dialogVisible', 'get-list'])
 
 const dialogVisible = computed({
   get: () => props.dialogVisible,
-  set: (val) => emit('update:dialogVisible', val)
+  set: val => emit('update:dialogVisible', val)
 })
 
 const formRef = ref(null)
 
+const estadoOptions = [
+  { label: 'Activo', value: 1 },
+  { label: 'Inactivo', value: 0 }
+]
+
 const state = reactive({
-  title: '新增平行班',
+  title: 'Nuevo Paralelo',
   form: {
     codp: null,
     nombre: '',
     estado: 1
-  },
-  rules: {
-    nombre: [
-      { required: true, message: 'Por favor ingrese nombre', trigger: 'blur' }
-    ],
-    estado: [
-      { required: true, message: 'Por favor seleccione estado', trigger: 'change' }
-    ]
   }
 })
 
-watch(() => props.paraleloObj, (newVal) => {
-  if (newVal && newVal.codp) {
-    state.title = 'Editar Paralelo'
-    state.form = { ...newVal }
-  } else {
-    state.title = 'Nuevo Paralelo'
-    state.form = { codp: null, nombre: '', estado: 1 }
-  }
-}, { deep: true, immediate: true })
+watch(
+  () => props.paraleloObj,
+  (newVal) => {
+    if (newVal && newVal.codp) {
+      state.title = 'Editar Paralelo'
+      state.form = { ...newVal }
+    } else {
+      state.title = 'Nuevo Paralelo'
+      state.form = { codp: null, nombre: '', estado: 1 }
+    }
+  },
+  { immediate: true, deep: true }
+)
 
-// Cerrar Dialog
 const closeFun = () => {
-  formRef.value?.resetFields()
+  formRef.value?.resetValidation?.()
   dialogVisible.value = false
 }
 
-// Guardar
-const submitFun = () => {
-  formRef.value?.validate((valid) => {
-    if (valid) {
-      editParalelo(state.form).then(res => {
-        if (res.success) {
-          successMsg(res.data)
-          emit('getList')
-          closeFun()
-        } else {
-          errorMsg(res.msg)
-        }
-      })
+const submitFun = async () => {
+  if (!state.form.nombre) {
+    errorMsg('Por favor ingrese nombre')
+    return
+  }
+
+  try {
+    const res = await editParalelo(state.form)
+    if (res.success) {
+      successMsg(res.data)
+      emit('get-list')
+      closeFun()
+    } else {
+      errorMsg(res.msg)
     }
-  })
+  } catch (err) {
+    errorMsg(err.message)
+  }
 }
 </script>
 

@@ -6,9 +6,11 @@
         :key="index"
         :label="item.name"
         :name="item.name">
-      <router-view></router-view>
+      
     </el-tab-pane>
+    
   </el-tabs>
+  <router-view></router-view>
 </template>
 
 <script setup>
@@ -31,7 +33,11 @@ const tabs = computed(() => {
 const clickTab = (tab) => {
   store.activeIndex = tab.paneName
   // Saltar a la pestaña correspondiente
-  router.push({name: tab.paneName})
+  const t = tabs.value.find(x => x.name === tab.paneName)
+if (t && t.path) {
+  router.push({ path: t.path })
+}
+
 }
   // eliminar pestaña
 const removeTab = (name) => {

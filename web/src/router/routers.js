@@ -1,37 +1,30 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
+
 // Importa el Layout y Home
 import Layout from '@/layout/index.vue'; 
 import Home from '@/views/Home.vue'; 
 
-// 1. RUTAS CONSTANTES (No usan el Layout, ni requieren autenticación)
+// -----------------------------------------------------
+// 1. RUTAS CONSTANTES (No necesitan autenticación)
+// -----------------------------------------------------
 export const constantRoutes = [
     {
-         path: '/login',
-
+        path: '/login',
         name: 'login',
-
         component: () => import('../login')
-
     },
     {
-
         path: '/401',
-
         name: '401',
-
         component: () => import('../views/error/401')
-
     },
-     {
-
+    {
         path: '/404',
-
         name: '404',
-
         component: () => import('../views/error/404')
-
     },
-    // Rutas con Layout que representan la página de inicio
+
+    // Home con Layout
     {
         path: '/',
         component: Layout,
@@ -41,18 +34,21 @@ export const constantRoutes = [
             {
                 path: 'home',
                 name: 'Inicio',
-                component: Home, // Usamos el componente Home importado
+                component: Home,
                 meta: { title: 'Inicio', icon: 'Home' }
             }
         ]
     }
 ];
 
-// 2. RUTAS ASÍNCRONAS (Módulos principales que usan el Layout)
+// -----------------------------------------------------
+// 2. RUTAS ASÍNCRONAS (Requieren autenticación)
+// -----------------------------------------------------
 export const asyncRoutes = [
-    // --- Módulos Académicos/Configuración ---
+
+    // ---------- MÓDULO: Gestión Académica ----------
     {
-        path: '/gestion-academica', // Agrupación lógica
+        path: '/gestion-academica',
         component: Layout,
         meta: { title: 'Gestión Académica', icon: 'Setting', requiresAuth: true },
         children: [
@@ -72,19 +68,19 @@ export const asyncRoutes = [
                 path: 'dicta',
                 name: 'Dicta',
                 component: () => import('@/views/dicta/index.vue'),
-                meta: { title: 'Asignación Docentes-Materias', icon: 'User' },
+                meta: { title: 'Asignación Docentes-Materias', icon: 'User' }
             },
             {
                 path: 'mapa',
                 name: 'Mapa',
                 component: () => import('@/views/mapa/index.vue'),
-                meta: { title: 'Oferta Académica (MAPA)', icon: 'Table' },
+                meta: { title: 'Oferta Académica (MAPA)', icon: 'Table' }
             },
             {
-                path: 'materia', // Nota: Tu estructura original estaba anidada incorrectamente aquí.
+                path: 'materia',
                 name: 'Materia',
                 component: () => import('@/views/materia/index.vue'),
-                meta: { title: 'Gestión de Materias', icon: 'List' } 
+                meta: { title: 'Gestión de Materias', icon: 'List' }
             },
             {
                 path: 'notas',
@@ -94,13 +90,15 @@ export const asyncRoutes = [
             },
         ]
     },
-    
-    // --- Módulos de Ítems y Modalidades ---
+
+    // ---------- MÓDULO: Configuración ----------
     {
         path: '/configuracion',
         component: Layout,
         meta: { title: 'Configuración', icon: 'Setting' },
         children: [
+
+            // CRUD de Ítems y niveles
             {
                 path: 'items',
                 name: 'Items',
@@ -125,35 +123,51 @@ export const asyncRoutes = [
                 component: () => import('@/views/paralelo/index.vue'),
                 meta: { title: 'Gestión de Paralelos', icon: 'Grid' }
             },
+
+            // Modalidades
             {
                 path: 'modalidad',
                 name: 'Modalidad',
                 component: () => import('@/views/modalidad/index.vue'),
-                meta: { title: 'Modalidades Académicas', icon: 'List' },
+                meta: { title: 'Modalidades Académicas', icon: 'List' }
             },
             {
                 path: 'dmodalidad',
                 name: 'Dmodalidad',
                 component: () => import('@/views/dmodalidad/index.vue'),
-                meta: { title: 'Detalles de Modalidades', icon: 'ListCheck' },
+                meta: { title: 'Detalles de Modalidades', icon: 'ListCheck' }
             },
+
+            // CRUD que agregamos (Clientes y Usuarios)
+            {
+                path: 'clientes',
+                name: 'Clientes',
+                component: () => import('@/views/clientes/index.vue'),
+                meta: { title: 'Gestión de Clientes', icon: 'Users' }
+            },
+            {
+                path: 'usuarios',
+                name: 'Usuarios',
+                component: () => import('@/views/usuario/index.vue'),
+                meta: { title: 'Gestión de Usuarios', icon: 'User' }
+            }
         ]
     },
 
-    // --- Catch-all 404 ---
-    // Esta debe ser la última ruta.
+    // ---------- Catch-all 404 ----------
     {
-        path: '/:pathMatch(.*)*', 
-        redirect: '/404', 
-        meta: { hidden: true } 
+        path: '/:pathMatch(.*)*',
+        redirect: '/404',
+        meta: { hidden: true }
     }
 ];
 
+// -----------------------------------------------------
 // 3. CREACIÓN DEL ROUTER
+// -----------------------------------------------------
 const routers = createRouter({
     history: createWebHashHistory(),
-    // Unimos las rutas constantes y asíncronas para la configuración inicial
-    routes: constantRoutes.concat(asyncRoutes) 
+    routes: constantRoutes.concat(asyncRoutes)
 });
 
 export default routers;

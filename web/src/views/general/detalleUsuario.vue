@@ -1,92 +1,70 @@
 <template>
-  <el-dialog
-    v-model="dialogVisible"
-    :title="`Detalles de ${usuarioData?.username}`"
-    width="700px"
-    @close="handleClose"
-  >
-    <el-descriptions :column="2" border>
-      <el-descriptions-item label="Usuario">
-        <el-tag>{{ usuarioData?.username }}</el-tag>
-      </el-descriptions-item>
-      
-      <el-descriptions-item label="Nombre">
-        {{ usuarioData?.nickName }}
-      </el-descriptions-item>
+  <q-dialog v-model="dialogVisible" persistent maximized>
+    <q-card style="min-width: 500px; max-width: 700px">
+      <q-card-section class="text-h6">
+        Detalles de {{ usuarioData?.username }}
+      </q-card-section>
 
-      <el-descriptions-item label="Nombre Completo" :span="2">
-        {{ usuarioData?.nombreCompleto || 'No disponible' }}
-      </el-descriptions-item>
+      <q-card-section>
+        <!-- Información principal -->
+        <q-table
+          :rows="detalleRows"
+          :columns="columns"
+          flat
+          bordered
+          class="q-mb-md"
+          row-key="label"
+        >
+          <template v-slot:body-cell-value="props">
+            <span v-if="props.row.type === 'tag'">
+              <q-badge
+                :color="props.row.color"
+                :label="props.row.value"
+                align="center"
+              />
+            </span>
+            <span v-else>{{ props.row.value }}</span>
+          </template>
+        </q-table>
 
-      <el-descriptions-item label="Email" :span="2">
-        {{ usuarioData?.email }}
-      </el-descriptions-item>
+        <!-- Historial de gestiones -->
+        <q-separator spaced />
+        <div class="row items-center q-mb-sm">
+          <q-icon name="event" class="q-mr-sm" />
+          <span class="text-subtitle2">Historial de Gestiones</span>
+        </div>
 
-      <el-descriptions-item label="Tipo">
-        <el-tag :type="usuarioData?.tipo === 'DOCENTE' ? 'success' : 'primary'">
-          {{ usuarioData?.tipo || 'N/A' }}
-        </el-tag>
-      </el-descriptions-item>
-
-      <el-descriptions-item label="Teléfono">
-        {{ usuarioData?.telf || 'No disponible' }}
-      </el-descriptions-item>
-
-      <el-descriptions-item label="Gestión Actual">
-        <el-tag type="warning">{{ usuarioData?.gestion }}</el-tag>
-      </el-descriptions-item>
-
-      <el-descriptions-item label="Estado">
-        <el-tag :type="usuarioData?.enabled ? 'success' : 'danger'">
-          {{ usuarioData?.enabled ? 'Activo' : 'Inactivo' }}
-        </el-tag>
-      </el-descriptions-item>
-
-      <el-descriptions-item label="Total Materias">
-        <el-badge :value="usuarioData?.totalMaterias" type="success" />
-      </el-descriptions-item>
-
-      <el-descriptions-item label="Total Notas">
-        <el-badge :value="usuarioData?.totalNotas" type="primary" />
-      </el-descriptions-item>
-    </el-descriptions>
-
-    <!-- Gestiones del usuario -->
-    <el-divider content-position="left">
-      <el-icon><Calendar /></el-icon>
-      Historial de Gestiones
-    </el-divider>
-
-    <el-timeline v-loading="loadingGestiones">
-      <el-timeline-item
-        v-for="gestion in gestiones"
-        :key="gestion"
-        :timestamp="`Gestión ${gestion}`"
-        placement="top"
-      >
-        <el-card>
-          <h4>Año Académico {{ gestion }}</h4>
-          <el-button
-            type="primary"
-            size="small"
-            @click="verDetalleGestion(gestion)"
+        <q-timeline dense class="scroll-area" style="max-height: 300px;">
+          <q-timeline-entry
+            v-for="gestion in gestiones"
+            :key="gestion"
+            :title="`Gestión ${gestion}`"
+            side="top"
           >
-            Ver Detalles
-          </el-button>
-        </el-card>
-      </el-timeline-item>
-    </el-timeline>
+            <q-card flat bordered class="q-pa-sm">
+              <div class="text-subtitle2">Año Académico {{ gestion }}</div>
+              <q-btn
+                label="Ver Detalles"
+                color="primary"
+                size="sm"
+                class="q-mt-sm"
+                @click="verDetalleGestion(gestion)"
+              />
+            </q-card>
+          </q-timeline-entry>
+        </q-timeline>
+      </q-card-section>
 
-    <template #footer>
-      <el-button type="primary" @click="handleClose">Cerrar</el-button>
-    </template>
-  </el-dialog>
+      <q-card-actions align="right">
+        <q-btn flat label="Cerrar" color="primary" @click="handleClose" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Calendar } from '@element-plus/icons-vue'
+import { Notify } from 'quasar'
 import { getGestionesByUser, getGeneralByUserAndGestion } from '@/api/general/general'
 
 const props = defineProps({
@@ -98,29 +76,39 @@ const emit = defineEmits(['update:modelValue'])
 
 // Estado
 const gestiones = ref([])
-const loadingGestiones = ref(false)
-
-// Dialog visibility
 const dialogVisible = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
+  set: val => emit('update:modelValue', val)
 })
+
+// Tabla de detalles principal
+const detalleRows = computed(() => [
+  { label: 'Usuario', value: props.usuarioData?.username || '-', type: 'tag', color: 'primary' },
+  { label: 'Nombre', value: props.usuarioData?.nickName || '-' },
+  { label: 'Nombre Completo', value: props.usuarioData?.nombreCompleto || 'No disponible' },
+  { label: 'Email', value: props.usuarioData?.email || 'No disponible' },
+  { label: 'Tipo', value: props.usuarioData?.tipo || 'N/A', type: 'tag', color: props.usuarioData?.tipo === 'DOCENTE' ? 'green' : 'blue' },
+  { label: 'Teléfono', value: props.usuarioData?.telf || 'No disponible' },
+  { label: 'Gestión Actual', value: props.usuarioData?.gestion || '-', type: 'tag', color: 'orange' },
+  { label: 'Estado', value: props.usuarioData?.enabled ? 'Activo' : 'Inactivo', type: 'tag', color: props.usuarioData?.enabled ? 'green' : 'red' },
+  { label: 'Total Materias', value: props.usuarioData?.totalMaterias || 0, type: 'tag', color: 'green' },
+  { label: 'Total Notas', value: props.usuarioData?.totalNotas || 0, type: 'tag', color: 'blue' }
+])
+
+const columns = [
+  { name: 'label', label: 'Campo', field: 'label', align: 'left' },
+  { name: 'value', label: 'Valor', field: 'value', align: 'left' }
+]
 
 // Cargar gestiones del usuario
 const cargarGestiones = async () => {
   if (!props.usuarioData?.ids) return
 
-  loadingGestiones.value = true
   try {
     const { data } = await getGestionesByUser(props.usuarioData.ids)
-    
-    if (data.success) {
-      gestiones.value = data.data
-    }
+    if (data.success) gestiones.value = data.data
   } catch (error) {
-    ElMessage.error('Error al cargar gestiones: ' + error.message)
-  } finally {
-    loadingGestiones.value = false
+    Notify.create({ type: 'negative', message: 'Error al cargar gestiones: ' + error.message })
   }
 }
 
@@ -128,12 +116,11 @@ const cargarGestiones = async () => {
 const verDetalleGestion = async (gestion) => {
   try {
     const { data } = await getGeneralByUserAndGestion(props.usuarioData.ids, gestion)
-    
     if (data.success) {
-      ElMessage.success(`Gestión ${gestion}: ${data.data.totalMaterias} materias, ${data.data.totalNotas} notas`)
+      Notify.create({ type: 'positive', message: `Gestión ${gestion}: ${data.data.totalMaterias} materias, ${data.data.totalNotas} notas` })
     }
   } catch (error) {
-    ElMessage.error('Error al obtener detalles: ' + error.message)
+    Notify.create({ type: 'negative', message: 'Error al obtener detalles: ' + error.message })
   }
 }
 
@@ -144,16 +131,13 @@ const handleClose = () => {
 
 // Cargar gestiones al abrir
 watch(() => props.usuarioData, (newData) => {
-  if (newData && props.modelValue) {
-    cargarGestiones()
-  }
+  if (newData && props.modelValue) cargarGestiones()
 }, { immediate: true })
 </script>
 
 <style scoped>
-.el-timeline {
+.scroll-area {
   padding-left: 10px;
-  max-height: 300px;
   overflow-y: auto;
 }
 </style>

@@ -13,3 +13,16 @@ export function getClientesList(params){
         params
     })
 }
+
+/**
+ * Eliminar registro de cliente
+ * @param data
+ * @returns {AxiosPromise}
+ */
+export function delCliente(data) {
+    return request({
+        url: '/api/sys/clientes/delete', // <--- Asegúrate de que esta URL sea la correcta para tu backend
+        method: 'post', // Método común para eliminación
+        data
+    });
+}

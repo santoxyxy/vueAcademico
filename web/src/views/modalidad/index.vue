@@ -2,81 +2,93 @@
   <div class="app-container">
     <!-- Barra de búsqueda -->
     <div class="searchDiv">
-      <el-input 
-        class="searchInput" 
-        v-model="state.blurry" 
-        placeholder="Buscar por nombre de modalidad"
+      <q-input
+        dense
+        outlined
+        v-model="state.blurry"
+        label="Buscar por nombre de modalidad"
         clearable
-        @clear="getModalidadListFun"
+        class="searchInput"
         @keyup.enter="getModalidadListFun"
+        @clear="getModalidadListFun"
       />
-      <el-button type="primary" icon="Search" @click="getModalidadListFun">
-        Consultar
-      </el-button>
-      <el-button type="success" icon="Plus" @click="addModalidad" v-if="hasPer(['ROLE_ADMIN'])">
-        Nueva Modalidad
-      </el-button>
+      <q-btn
+        dense
+        color="primary"
+        icon="search"
+        label="Consultar"
+        @click="getModalidadListFun"
+      />
+      <q-btn
+        dense
+        color="secondary"
+        icon="add"
+        label="Nueva Modalidad"
+        v-if="hasPer(['ROLE_ADMIN'])"
+        @click="addModalidad"
+      />
     </div>
 
     <!-- Tabla -->
-    <el-table 
-      :data="state.tableData" 
-      v-loading="state.loading" 
-      border 
-      stripe
-      style="width: 100%"
+    <q-table
+      flat
+      bordered
+      :rows="state.tableData"
+      :columns="columns"
+      row-key="codm"
+      :loading="state.loading"
+      row-height="40"
+      class="shadow-0"
     >
-      <el-table-column type="index" label="#" width="80" align="center" />
-      
-      <el-table-column prop="codm" label="Código" width="120" align="center" />
-      
-      <el-table-column prop="nombre" label="Nombre" min-width="250" show-overflow-tooltip />
-      
-      <el-table-column prop="estado" label="Estado" width="120" align="center">
-        <template #default="{ row }">
-          <el-tag :type="row.estado === 1 ? 'success' : 'danger'" size="small">
-            {{ row.estado === 1 ? 'Activo' : 'Inactivo' }}
-          </el-tag>
-        </template>
-      </el-table-column>
+      <!-- Estado -->
+      <template v-slot:body-cell-estado="props">
+        <q-chip
+          dense
+          :color="props.row.estado === 1 ? 'green' : 'red'"
+          text-color="white"
+          outline
+        >
+          {{ props.row.estado === 1 ? 'Activo' : 'Inactivo' }}
+        </q-chip>
+      </template>
 
-      <el-table-column label="Operaciones" width="200" align="center" fixed="right">
-        <template #default="{ row }">
-          <el-button 
-            type="primary" 
-            size="small" 
-            icon="Edit"
-            @click="editModalidad(row)"
-            v-if="hasPer(['ROLE_ADMIN', 'ROLE_DOCENTE'])"
-          >
-            Editar
-          </el-button>
-          <el-popconfirm
-            title="¿Confirmar eliminación?"
-            @confirm="delModalidad(row.codm)"
-            v-if="hasPer(['ROLE_ADMIN'])"
-          >
-            <template #reference>
-              <el-button type="danger" size="small" icon="Delete">
-                Eliminar
-              </el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
+      <!-- Operaciones -->
+      <template v-slot:body-cell-option="props">
+        <q-btn
+          dense
+          color="primary"
+          size="sm"
+          icon="edit"
+          label="Editar"
+          v-if="hasPer(['ROLE_ADMIN', 'ROLE_DOCENTE'])"
+          @click="editModalidad(props.row)"
+        />
+        <q-btn
+          dense
+          color="negative"
+          size="sm"
+          icon="delete"
+          label="Eliminar"
+          class="q-ml-sm"
+          v-if="hasPer(['ROLE_ADMIN'])"
+          @click="delModalidad(props.row.codm)"
+        />
+      </template>
+    </q-table>
 
     <!-- Paginación -->
-    <Pagination 
-      :total="state.total" 
-      :page="state.current" 
-      :limit="state.size" 
-      @pagination="getModalidadListFun"
+    <q-pagination
+      v-model="state.current"
+      :max="Math.ceil(state.total / state.size)"
+      max-pages="7"
+      color="primary"
+      @update:model-value="getModalidadListFun"
+      class="q-mt-md"
     />
 
     <!-- Dialog de edición -->
-    <EditModalidad 
-      v-model:dialogVisible="dialogVisible" 
+    <EditModalidad
+      v-model:dialogVisible="dialogVisible"
       :modalidadObj="currentModalidad"
       @get-list="getModalidadListFun"
     />
@@ -88,7 +100,6 @@ import { reactive, ref, onMounted } from 'vue'
 import { queryModalidadTable, delModalidad as delModalidadApi } from '@/api/modalidad/modalidad'
 import { errorMsg, successMsg } from '@/utils/message'
 import { hasPer } from '@/utils/common'
-import Pagination from '@/components/Pagination.vue'
 import EditModalidad from './editModalidad.vue'
 
 const state = reactive({
@@ -103,11 +114,18 @@ const state = reactive({
 const dialogVisible = ref(false)
 const currentModalidad = ref({})
 
+// Columnas para q-table
+const columns = [
+  { name: 'index', label: '#', field: (row, index) => index + 1, align: 'center', style: 'width: 60px' },
+  { name: 'codm', label: 'Código', field: 'codm', align: 'center', style: 'width: 120px' },
+  { name: 'nombre', label: 'Nombre', field: 'nombre' },
+  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', style: 'width: 120px' },
+  { name: 'option', label: 'Operaciones', field: 'option', align: 'center', style: 'width: 200px' }
+]
+
 // Obtener lista
 const getModalidadListFun = (obj) => {
   if (obj && obj.page) state.current = obj.page
-  if (obj && obj.limit) state.size = obj.limit
-
   state.loading = true
   const params = {
     blurry: state.blurry,
@@ -144,13 +162,23 @@ const editModalidad = (row) => {
 
 // Eliminar
 const delModalidad = (id) => {
-  delModalidadApi(id).then((res) => {
-    if (res.success) {
-      successMsg(res.data)
-      getModalidadListFun()
-    } else {
-      errorMsg(res.msg)
-    }
+  import('quasar').then(({ Dialog }) => {
+    Dialog.create({
+      title: 'Confirmar',
+      message: '¿Confirmar eliminación?',
+      ok: { label: 'Sí', color: 'primary' },
+      cancel: { label: 'Cancelar', color: 'grey-5' },
+      color: 'warning'
+    }).onOk(() => {
+      delModalidadApi(id).then((res) => {
+        if (res.success) {
+          successMsg(res.data)
+          getModalidadListFun()
+        } else {
+          errorMsg(res.msg)
+        }
+      })
+    })
   })
 }
 
@@ -168,6 +196,7 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .searchInput {

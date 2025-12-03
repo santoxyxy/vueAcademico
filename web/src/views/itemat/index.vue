@@ -1,59 +1,111 @@
 <template>
   <div>
-    <div class="searchDiv">
-      <el-input class="searchInput" v-model="state.filters.codmat" placeholder="Código de Materia" clearable style="width: 200px;"></el-input>
-      <el-input-number v-model="state.filters.gestion" :min="2020" :max="2050" placeholder="Gestión" style="width: 150px; margin-left: 10px;"></el-input-number>
-      <el-button type="primary" @click="getItematListFun" style="margin-left: 10px;">Consulta</el-button>
-      <el-button v-if="hasPer('itemat:add')" @click="editItematFun" style="float: right;">Nueva Configuración</el-button>
+    <div class="searchDiv row items-center q-gutter-sm">
+      <q-input
+        filled
+        v-model="state.filters.codmat"
+        label="Código de Materia"
+        clearable
+        style="width: 200px"
+      />
+
+      <q-input
+        filled
+        v-model.number="state.filters.gestion"
+        type="number"
+        label="Gestión"
+        :min="2020"
+        :max="2050"
+        style="width: 150px"
+      />
+
+      <q-btn color="primary" label="Consulta" @click="getItematListFun" />
+
+      <q-btn
+        v-if="hasPer('itemat:add')"
+        label="Nueva Configuración"
+        color="secondary"
+        class="q-ml-auto"
+        @click="editItematFun"
+      />
     </div>
 
     <!-- Alerta de validación -->
-    <el-alert v-if="state.showValidation && state.filters.codmat && state.filters.gestion"
-              :title="state.validationMsg"
-              :type="state.validationType"
-              :closable="false"
-              style="margin: 10px 0;">
-    </el-alert>
+    <q-banner
+      v-if="state.showValidation && state.filters.codmat && state.filters.gestion"
+      :class="state.validationType === 'success' ? 'bg-positive text-white' : 'bg-warning text-black'"
+      dense
+      rounded
+      class="q-mb-md"
+    >
+      {{ state.validationMsg }}
+    </q-banner>
 
-    <el-table :data="state.tableData" row-key="id" border height="calc(100vh - 240px)" max-height="calc(100vh - 240px)">
-      <el-table-column label="Numero de Serie" type="index" width="60"></el-table-column>
-      <el-table-column label="Código Materia" prop="codmat" width="120"></el-table-column>
-      <el-table-column label="Nombre Materia" prop="nombreMateria"></el-table-column>
-      <el-table-column label="Ítem" prop="nombreItem" width="150"></el-table-column>
-      <el-table-column label="Ponderación (%)" prop="ponderacion" width="130" align="center">
-        <template #default="scope">
-          <el-tag :type="scope.row.ponderacion > 0 ? 'success' : 'info'">
-            {{ scope.row.ponderacion }}%
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="Gestión" prop="gestion" width="100" align="center"></el-table-column>
-      <el-table-column label="Estado" prop="estado" width="100" align="center">
-        <template #default="scope">
-          <el-tag :type="scope.row.estado === 1 ? 'success' : 'danger'">
-            {{ scope.row.estado === 1 ? 'Activo' : 'Inactivo' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="Funcionar" prop="option" width="200px" align="center">
-        <template #default="scope">
-          <el-button v-if="hasPer('itemat:edit')" type="primary" size="small" @click="editItematFun(JSON.parse(JSON.stringify(scope.row)))">Editar</el-button>
-          <el-button v-if="hasPer('itemat:del')" type="danger" size="small" @click="delItematFun(scope.row)">Borrar</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <q-table
+      :rows="state.tableData"
+      row-key="id"
+      flat
+      bordered
+      dense
+      :columns="columns"
+      virtual-scroll
+      style="height: calc(100vh - 240px)"
+    >
+      <template v-slot:body-cell-ponderacion="props">
+        <q-td :props="props" class="text-center">
+          <q-badge
+            :color="props.row.ponderacion > 0 ? 'positive' : 'info'"
+            align="middle"
+          >
+            {{ props.row.ponderacion }}%
+          </q-badge>
+        </q-td>
+      </template>
 
-    <edit-itemat v-model:dialog-visible="dialogVisible" :itemat-obj="state.itematObj" @get-list="getItematListFun"></edit-itemat>
+      <template v-slot:body-cell-estado="props">
+        <q-td :props="props" class="text-center">
+          <q-badge :color="props.row.estado === 1 ? 'positive' : 'negative'" align="middle">
+            {{ props.row.estado === 1 ? 'Activo' : 'Inactivo' }}
+          </q-badge>
+        </q-td>
+      </template>
+
+      <template v-slot:body-cell-option="props">
+        <q-td :props="props" class="text-center">
+          <q-btn
+            v-if="hasPer('itemat:edit')"
+            size="sm"
+            color="primary"
+            label="Editar"
+            class="q-mr-sm"
+            @click="editItematFun(JSON.parse(JSON.stringify(props.row)))"
+          />
+          <q-btn
+            v-if="hasPer('itemat:del')"
+            size="sm"
+            color="negative"
+            label="Borrar"
+            @click="delItematFun(props.row)"
+          />
+        </q-td>
+      </template>
+    </q-table>
+
+    <edit-itemat
+      v-model:dialog-visible="dialogVisible"
+      :itemat-obj="state.itematObj"
+      @get-list="getItematListFun"
+    />
   </div>
 </template>
 
 <script setup>
-import { queryItematTable, delItemat, validatePonderaciones } from "../../api/itemat/itemat";
-import { errorMsg, infoMsg, successMsg } from "../../utils/message";
-import { hasPer } from "../../utils/common";
-import editItemat from "./editItemat";
-import { onMounted, reactive, ref, watch } from "vue";
-import { ElMessageBox } from "element-plus";
+import { ref, reactive, watch, onMounted } from 'vue'
+import { queryItematTable, delItemat, validatePonderaciones } from '@/api/itemat/itemat'
+import { errorMsg, infoMsg, successMsg } from '@/utils/message'
+import { hasPer } from '@/utils/common'
+import editItemat from './editItemat'
+import { Dialog } from 'quasar'
 
 const dialogVisible = ref(false)
 
@@ -69,12 +121,24 @@ const state = reactive({
   validationType: 'success'
 })
 
+const columns = [
+  { name: 'index', label: 'Nº', field: (row, index) => index + 1, align: 'center', style: 'width: 60px' },
+  { name: 'codmat', label: 'Código Materia', field: 'codmat', style: 'width: 120px' },
+  { name: 'nombreMateria', label: 'Nombre Materia', field: 'nombreMateria' },
+  { name: 'nombreItem', label: 'Ítem', field: 'nombreItem', style: 'width: 150px' },
+  { name: 'ponderacion', label: 'Ponderación (%)', field: 'ponderacion', style: 'width: 130px', align: 'center' },
+  { name: 'gestion', label: 'Gestión', field: 'gestion', style: 'width: 100px', align: 'center' },
+  { name: 'estado', label: 'Estado', field: 'estado', style: 'width: 100px', align: 'center' },
+  { name: 'option', label: 'Funcionar', field: 'option', style: 'width: 200px', align: 'center' }
+]
+
+// Cargar lista al montar
 onMounted(() => {
   getItematListFun()
 })
 
-// Validar automáticamente cuando cambien los filtros
-watch(() => [state.filters.codmat, state.filters.gestion], () => {
+// Validación automática al cambiar filtros
+watch([() => state.filters.codmat, () => state.filters.gestion], () => {
   if (state.filters.codmat && state.filters.gestion) {
     validatePonderacionesFun()
   } else {
@@ -85,16 +149,14 @@ watch(() => [state.filters.codmat, state.filters.gestion], () => {
 // Obtener lista de configuraciones
 const getItematListFun = () => {
   const params = {
-    gestion: state.filters.gestion || null,
-    codmat: state.filters.codmat || null
+    codmat: state.filters.codmat || null,
+    gestion: state.filters.gestion || null
   }
-  
+
   queryItematTable(params).then(res => {
     if (res.success) {
       state.tableData = res.data
-      if (state.filters.codmat && state.filters.gestion) {
-        validatePonderacionesFun()
-      }
+      if (state.filters.codmat && state.filters.gestion) validatePonderacionesFun()
     } else {
       errorMsg(res.msg)
     }
@@ -105,37 +167,36 @@ const getItematListFun = () => {
 const validatePonderacionesFun = () => {
   if (!state.filters.codmat || !state.filters.gestion) return
 
-  validatePonderaciones(state.filters.codmat, state.filters.gestion).then(res => {
-    state.showValidation = true
-    if (res.success) {
-      state.validationMsg = '✓ Las ponderaciones suman 100% correctamente'
-      state.validationType = 'success'
-    } else {
-      state.validationMsg = '⚠ Las ponderaciones NO suman 100%'
-      state.validationType = 'warning'
-    }
-  }).catch(() => {
-    state.showValidation = false
-  })
+  validatePonderaciones(state.filters.codmat, state.filters.gestion)
+    .then(res => {
+      state.showValidation = true
+      if (res.success) {
+        state.validationMsg = '✓ Las ponderaciones suman 100% correctamente'
+        state.validationType = 'success'
+      } else {
+        state.validationMsg = '⚠ Las ponderaciones NO suman 100%'
+        state.validationType = 'warning'
+      }
+    })
+    .catch(() => {
+      state.showValidation = false
+    })
 }
 
 // Editar Itemat
 const editItematFun = (row) => {
   dialogVisible.value = true
-  state.itematObj = row.codmat ? row : { gestion: state.filters.gestion }
+  state.itematObj = row?.codmat ? row : { gestion: state.filters.gestion }
 }
 
 // Eliminar Itemat
 const delItematFun = (row) => {
-  ElMessageBox.confirm(
-    `Confirmar para eliminar configuración de ${row.nombreItem} para ${row.nombreMateria}？`,
-    'Pista',
-    {
-      confirmButtonText: 'Seguro',
-      cancelButtonText: 'Cancelar',
-      type: 'warning'
-    }
-  ).then(() => {
+  Dialog.create({
+    title: 'Pista',
+    message: `Confirmar para eliminar configuración de ${row.nombreItem} para ${row.nombreMateria}？`,
+    cancel: true,
+    persistent: true
+  }).onOk(() => {
     delItemat(row.codmat, row.codi, row.gestion).then(res => {
       if (res.success) {
         successMsg(res.data)
@@ -144,8 +205,8 @@ const delItematFun = (row) => {
         errorMsg(res.msg)
       }
     })
-  }).catch(() => {
-    infoMsg('Operacion Cancelada')
+  }).onCancel(() => {
+    infoMsg('Operación Cancelada')
   })
 }
 </script>

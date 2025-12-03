@@ -2,81 +2,94 @@
   <div class="app-container">
     <!-- Barra de búsqueda -->
     <div class="searchDiv">
-      <el-input 
-        class="searchInput" 
-        v-model="state.blurry" 
+      <q-input
+        dense
+        outlined
+        v-model="state.blurry"
         placeholder="Buscar por nombre de detalle"
         clearable
         @clear="getDmodalidadListFun"
         @keyup.enter="getDmodalidadListFun"
+        class="searchInput"
+      >
+        <template v-slot:append>
+          <q-icon name="search" @click="getDmodalidadListFun" class="cursor-pointer" />
+        </template>
+      </q-input>
+
+      <q-btn
+        color="positive"
+        icon="add"
+        label="Nuevo"
+        dense
+        @click="addDmodalidad"
+        v-if="hasPer(['ROLE_ADMIN'])"
       />
-      <el-button type="primary" icon="Search" @click="getDmodalidadListFun">
-        Consultar
-      </el-button>
-      <el-button type="success" icon="Plus" @click="addDmodalidad" v-if="hasPer(['ROLE_ADMIN'])">
-        Nuevo
-      </el-button>
     </div>
 
     <!-- Tabla -->
-    <el-table 
-      :data="state.tableData" 
-      v-loading="state.loading" 
-      border 
-      stripe
-      style="width: 100%"
+    <q-table
+      flat
+      bordered
+      :rows="state.tableData"
+      row-key="coddm"
+      :loading="state.loading"
+      :columns="columns"
+      hide-bottom
+      wrap-cells
     >
-      <el-table-column type="index" label="#" width="60" align="center" />
-      
-      <el-table-column prop="nombre" label="Nombre Detalle" min-width="180" show-overflow-tooltip />
-      
-      <el-table-column prop="nombreModalidad" label="Modalidad Padre" min-width="150" show-overflow-tooltip />
-      
-      <el-table-column prop="estado" label="Estado" width="100" align="center">
-        <template #default="{ row }">
-          <el-tag :type="row.estado === 1 ? 'success' : 'danger'" size="small">
-            {{ row.estado === 1 ? 'Activo' : 'Inactivo' }}
-          </el-tag>
-        </template>
-      </el-table-column>
+      <!-- Estado -->
+      <template v-slot:body-cell-estado="props">
+        <q-td :props="props" class="text-center">
+          <q-badge
+            :color="props.row.estado === 1 ? 'green' : 'red'"
+            :label="props.row.estado === 1 ? 'Activo' : 'Inactivo'"
+            align="center"
+            rounded
+            dense
+          />
+        </q-td>
+      </template>
 
-      <el-table-column label="Operaciones" width="180" align="center" fixed="right">
-        <template #default="{ row }">
-          <el-button 
-            type="primary" 
-            size="small" 
-            icon="Edit"
-            @click="editDmodalidad(row)"
+      <!-- Operaciones -->
+      <template v-slot:body-cell-actions="props">
+        <q-td :props="props" class="text-center">
+          <q-btn
+            flat
+            dense
+            color="primary"
+            icon="edit"
+            label="Editar"
+            @click="editDmodalidad(props.row)"
             v-if="hasPer(['ROLE_ADMIN', 'ROLE_DOCENTE'])"
-          >
-            Editar
-          </el-button>
-          <el-popconfirm
-            title="¿Confirmar eliminación?"
-            @confirm="delDmodalidad(row.coddm)"
+          />
+          <q-btn
+            flat
+            dense
+            color="negative"
+            icon="delete"
+            label="Eliminar"
+            @click="confirmDelete(props.row.coddm)"
             v-if="hasPer(['ROLE_ADMIN'])"
-          >
-            <template #reference>
-              <el-button type="danger" size="small" icon="Delete">
-                Eliminar
-              </el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
+          />
+        </q-td>
+      </template>
+    </q-table>
 
     <!-- Paginación -->
-    <Pagination 
-      :total="state.total" 
-      :page="state.current" 
-      :limit="state.size" 
-      @pagination="getDmodalidadListFun"
+    <q-pagination
+      v-model="state.current"
+      :max="Math.ceil(state.total / state.size)"
+      max-pages="7"
+      boundary-numbers
+      color="primary"
+      class="q-mt-md"
+      @update:model-value="getDmodalidadListFun"
     />
 
     <!-- Dialog de edición -->
-    <EditDmodalidad 
-      v-model:dialogVisible="dialogVisible" 
+    <EditDmodalidad
+      v-model:dialogVisible="dialogVisible"
       :dmodalidadObj="currentDmodalidad"
       @get-list="getDmodalidadListFun"
     />
@@ -88,8 +101,8 @@ import { reactive, ref, onMounted } from 'vue'
 import { queryDmodalidadTable, delDmodalidad as delDmodalidadApi } from '@/api/dmodalidad/dmodalidad'
 import { errorMsg, successMsg } from '@/utils/message'
 import { hasPer } from '@/utils/common'
-import Pagination from '@/components/Pagination.vue'
 import EditDmodalidad from './editDmodalidad.vue'
+import { Dialog } from 'quasar'
 
 const state = reactive({
   blurry: '',
@@ -102,6 +115,14 @@ const state = reactive({
 
 const dialogVisible = ref(false)
 const currentDmodalidad = ref({})
+
+const columns = [
+  { name: 'index', label: '#', align: 'center', field: (_, index) => index + 1, sortable: false },
+  { name: 'nombre', label: 'Nombre Detalle', field: 'nombre', sortable: true },
+  { name: 'nombreModalidad', label: 'Modalidad Padre', field: 'nombreModalidad', sortable: true },
+  { name: 'estado', label: 'Estado', field: 'estado', sortable: false, align: 'center' },
+  { name: 'actions', label: 'Operaciones', field: 'actions', sortable: false, align: 'center' }
+]
 
 // Obtener lista
 const getDmodalidadListFun = (obj) => {
@@ -142,15 +163,24 @@ const editDmodalidad = (row) => {
   dialogVisible.value = true
 }
 
-// Eliminar
-const delDmodalidad = (id) => {
-  delDmodalidadApi(id).then((res) => {
-    if (res.success) {
-      successMsg(res.data)
-      getDmodalidadListFun()
-    } else {
-      errorMsg(res.msg)
-    }
+// Confirmar eliminación
+const confirmDelete = (id) => {
+  Dialog.create({
+    title: 'Confirmar eliminación',
+    message: '¿Está seguro de eliminar este detalle de modalidad?',
+    cancel: true,
+    persistent: true,
+    ok: { label: 'Sí, eliminar', color: 'negative' },
+    
+  }).onOk(() => {
+    delDmodalidadApi(id).then((res) => {
+      if (res.success) {
+        successMsg(res.data)
+        getDmodalidadListFun()
+      } else {
+        errorMsg(res.msg)
+      }
+    })
   })
 }
 

@@ -11,18 +11,19 @@
             clearable
             @keyup.enter="getMateriasListFun"
           />
-          <q-button color="primary" @click="getMateriasListFun">
+          <q-btn color="primary" @click="getMateriasListFun" dense>
             <q-icon name="search" />
             Consultar
-          </q-button>
-          <q-button 
+          </q-btn>
+          <q-btn 
             color="positive" 
             @click="openAddDialog"
+            dense
             v-if="hasPer('/sys/materia/edit')"
           >
             <q-icon name="add" />
             Nueva Materia
-          </q-button>
+          </q-btn>
         </div>
 
         <!-- Filtro por estado -->
@@ -36,6 +37,7 @@
               { label: 'Todos', value: null }
             ]"
             @update:model-value="getMateriasListFun"
+            dense
           />
         </div>
 
@@ -95,11 +97,14 @@
           v-model="pagination.page"
           :max="Math.ceil(state.total / pagination.rowsPerPage)"
           @update:model-value="getMateriasListFun"
+          max-pages="7"
+          color="primary"
+          class="q-mt-md"
         />
       </div>
 
       <!-- Modal de edición -->
-      <edit-materia
+      <EditMateria
         v-model="dialogVisible"
         :materia-data="currentMateria"
         @success="getMateriasListFun"
@@ -113,9 +118,8 @@ import { ref, reactive, onMounted } from 'vue';
 import { queryMateriaTable, delMateria } from '@/api/materia/materia';
 import { errorMsg, successMsg } from '@/utils/message';
 import { hasPer } from '@/utils/common';
-// eslint-disable-next-line no-unused-vars
 import EditMateria from './editMateria.vue';
-import { ElMessageBox } from 'element-plus';
+import { Dialog } from 'quasar';
 
 // Estado reactivo
 const state = reactive({
@@ -127,42 +131,13 @@ const state = reactive({
   estadoFiltro: 1 // 1=Activos, 0=Inactivos, null=Todos
 });
 
-// Definición de columnas
+// Columnas
 const columns = [
-  { 
-    name: 'codmat', 
-    required: true, 
-    label: 'Código', 
-    align: 'left', 
-    field: 'codmat', 
-    sortable: true 
-  },
-  { 
-    name: 'nombre', 
-    required: true, 
-    label: 'Nombre', 
-    align: 'left', 
-    field: 'nombre', 
-    sortable: true 
-  },
-  { 
-    name: 'nombreNivel', 
-    label: 'Nivel', 
-    align: 'left', 
-    field: 'nombreNivel', 
-    sortable: true 
-  },
-  { 
-    name: 'estado', 
-    label: 'Estado', 
-    align: 'center', 
-    field: 'estado' 
-  },
-  { 
-    name: 'actions', 
-    label: 'Acciones', 
-    align: 'center' 
-  }
+  { name: 'codmat', required: true, label: 'Código', align: 'left', field: 'codmat', sortable: true },
+  { name: 'nombre', required: true, label: 'Nombre', align: 'left', field: 'nombre', sortable: true },
+  { name: 'nombreNivel', label: 'Nivel', align: 'left', field: 'nombreNivel', sortable: true },
+  { name: 'estado', label: 'Estado', align: 'center', field: 'estado' },
+  { name: 'actions', label: 'Acciones', align: 'center' }
 ];
 
 const loading = ref(false);
@@ -224,28 +199,24 @@ const editMateria = (row) => {
   dialogVisible.value = true;
 };
 
-// Eliminar materia
+// Eliminar materia con Quasar Dialog
 const deleteMateria = (row) => {
-  ElMessageBox.confirm(
-    `¿Está seguro de eliminar la materia "${row.nombre}"?`,
-    'Confirmar eliminación',
-    {
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-      type: 'warning'
+  Dialog.create({
+  title: 'Confirmar eliminación',
+  message: `¿Está seguro de eliminar la materia "${row.nombre}"?`,
+  persistent: true,
+  ok: { label: 'Sí, eliminar', color: 'negative' },
+  cancel: { label: 'Cancelar', color: 'grey-5' }
+}).onOk(() => {
+  delMateria(row.codmat).then((res) => {
+    if (res.success) {
+      successMsg('Materia eliminada exitosamente');
+      getMateriasListFun();
+    } else {
+      errorMsg(res.msg);
     }
-  ).then(() => {
-    delMateria(row.codmat).then((res) => {
-      if (res.success) {
-        successMsg('Materia eliminada exitosamente');
-        getMateriasListFun();
-      } else {
-        errorMsg(res.msg);
-      }
-    });
-  }).catch(() => {
-    // Cancelado
   });
+});
 };
 
 onMounted(() => {

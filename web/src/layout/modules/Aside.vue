@@ -30,57 +30,91 @@
 </template>
 
 <script setup>
-import {useStore} from "../../store";
-import {getMenuTree, getPermission} from "../../api/menu/sysMenu";
-import {errorMsg} from "../../utils/message";
-import {computed, onMounted, ref} from "vue";
-import MenuTree from "../../components/MenuTree"
+import { useStore } from "../../store";
+import { getMenuTree, getPermission } from "../../api/menu/sysMenu";
+import { errorMsg } from "../../utils/message";
+import { computed, onMounted, ref } from "vue";
+import MenuTree from "../../components/MenuTree";
 
-const store = useStore()
+const store = useStore();
+const emit = defineEmits(["update:width"]);
 
-const emit = defineEmits(['update:width'])
+const menuList = ref([]);
+const isCollapse = ref(false);
 
-const menuList = ref([])
+// Pestaña activa proveniente del store
+const defaultActive = computed(() => store.activeIndex);
 
-const isCollapse = ref(false)
+//
+// =============================
+//   FUNCIÓN CLAVE: NORMALIZAR PATHS
+// =============================
+// Acomoda rutas mal enviadas por el backend
+//
+const fixMenuPaths = (menus) => {
+  return menus.map((m) => {
+    // Corrección de rutas según router.js
+    if (m.path === "/items") m.path = "/configuracion/items";
+    if (m.path === "/paralelo") m.path = "/configuracion/paralelo";
+    if (m.path === "/niveles") m.path = "/configuracion/niveles";
+    if (m.path === "/modalidad") m.path = "/configuracion/modalidad";
+    if (m.path === "/dmodalidad") m.path = "/configuracion/dmodalidad";
 
-const defaultActive = computed(() => {
-  return store.activeIndex
-})
+    // Cualquier menú general
+    if (m.path === "/menu") m.path = "/gestion-academica/general";
 
+    // Corregir los submenús recursivamente
+    if (m.children && m.children.length > 0) {
+      m.children = fixMenuPaths(m.children);
+    }
+
+    return m;
+  });
+};
+
+//
+// =============================
+//      CARGA DEL MENÚ DINÁMICO
+// =============================
+//
 onMounted(() => {
-  //  Obtener el árbol del menú de usuario actual
-  getMenuTree().then(res => {
-    if (res.success){
-      menuList.value = res.data
+  getMenuTree().then((res) => {
+    if (res.success) {
+      // Aplicar la corrección de rutas dinámicas
+      menuList.value = fixMenuPaths(res.data);
     }
-  })
-//  Obtener la lista de permisos de botones del usuario actual
-  getPermission().then(res => {
-    if (res.success){
-      store.permissionAction(res.data)
+  });
+
+  // Permisos del usuario
+  getPermission().then((res) => {
+    if (res.success) {
+      store.permissionAction(res.data);
     } else {
-      errorMsg(res.msg)
+      errorMsg(res.msg);
     }
-  })
-})
-//  abrir pagina
+  });
+});
+
+//
+// =============================
+//        CONTROL DE TABS
+// =============================
+//
+
 const openTab = (name, path) => {
-  console.log(name, path)
-  //  Agregar el menú actualmente abierto a la lista abierta
-  store.addTabAction({name: name, path: path})
-  //  Cambiar el menú activo al menú seleccionado
-  store.activeIndex = name
-}
-//  Modificar el estado de colapso
+  store.addTabAction({ name, path });
+  store.activeIndex = name;
+};
+
+//
+// =============================
+//        COLAPSAR MENÚ
+// =============================
+//
 const changeCollapse = () => {
-  isCollapse.value = !isCollapse.value
-  if (isCollapse.value){
-    emit('update:width', '64px')
-  } else {
-    emit('update:width', '230px')
-  }
-}
+  isCollapse.value = !isCollapse.value;
+  emit("update:width", isCollapse.value ? "64px" : "230px");
+};
 </script>
 
 <style scoped>

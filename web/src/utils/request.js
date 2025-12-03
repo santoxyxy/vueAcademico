@@ -1,127 +1,105 @@
 import axios from "axios";
-import routers from '../router/routers'
-import {useStore} from "../store";
-import {errorMsg} from "./message";
+import routers from '../router/routers';
+import { useStore } from "../store";
+import { errorMsg } from "./message";
 
-//  Crear instancia de axios
+// Crear instancia de axios
 const instance = axios.create({
-    baseURL: process.env.NODE_ENV === 'production' ? process.env.VUE_APP_BASE_URL : '/',
-    timeout: 60000   //  Solicitar tiempo de espera (milisegundos)
-})
+    baseURL: process.env.VUE_APP_BASE_URL,
+    timeout: 60000
+});
 
-//  request拦截器
+// Request interceptor
 instance.interceptors.request.use(
     config => {
-        const store = useStore()
-        // Si has iniciado sesión
-        if (store.token){
-            //  Agregar token en el encabezado de la solicitud
-            config.headers['Authorization'] = 'Bearer ' + store.token
+        const store = useStore();
+        if (store.token) {
+            config.headers['Authorization'] = 'Bearer ' + store.token;
         }
-        // Tipo de solicitud unificada json
-        config.headers['Content-Type'] = 'application/json'
-        return config
+        config.headers['Content-Type'] = 'application/json';
+        return config;
     },
-    error => {
-        Promise.reject(error)
-    }
-)
+    error => Promise.reject(error)
+);
 
-//  response拦截器
+// Response interceptor
 instance.interceptors.response.use(
-    response => {
-        //  La solicitud es exitosa y los datos se devuelven directamente.
-        return response.data
-    },
+    response => response.data,
     error => {
-        const store = useStore()
-        if (!error.response){
-            errorMsg(error.message)
+        const store = useStore();
+
+        if (!error.response) {
+            errorMsg(error.message || 'Error de red');
         } else {
-            //  Solicitar código de retorno
-            let code;
-            if (error.response){
-                code = error.response.status
-            }
-            //  Error de devolución de solicitud
-            const data = error.response.data
-            if (code){
-                //  Si no está autorizado
-                if (code === 401){
-                    // Indica que el token ha caducado. Utilice refrescoToken para actualizar el token actual.
-                    const refresh = store.refreshToken
-                    //  si existe
-                    if (refresh){
-                        return againRequest(refresh, error)
-                    //  de lo contrario
+            const code = error.response.status;
+            const data = error.response.data;
+
+            switch (code) {
+                case 401: {
+                    // Token expirado o no autorizado
+                    const refresh = store.refreshToken;
+                    if (refresh) {
+                        return againRequest(refresh, error);
                     } else {
-                        //  claro token
-                        store.tokenAction(null)
-                        //  Y vaya a la página de inicio de sesión para iniciar sesión nuevamente.
+                        store.tokenAction(null);
                         routers.push({
                             path: '/login',
-                            query: {
-                                backto: routers.currentRoute.fullPath
-                            }
-                        })
+                            query: { backto: routers.currentRoute.fullPath }
+                        });
                     }
-                    // Si no hay permiso
-                } else if (code === 403){
-                    // Saltar directamente a la página 401
-                    routers.replace({path: '/401'})
-                    //  Si es una excepción del servidor u otra excepción
-                } else {
-                    //  Si hay información anormal, muestre la información anormal.
-                    if (data){
-                        errorMsg(data.detail)
-                    }
+                    break;
                 }
-            } else {
-                errorMsg('Error en la solicitud de interfaz')
+
+                case 403: {
+                    // Mostrar mensaje real del backend
+                    if (data && (data.msg || data.detail)) {
+                        errorMsg(data.msg || data.detail);
+                    } else {
+                        errorMsg('No tiene permiso para realizar esta acción (403)');
+                    }
+                    break;
+                }
+
+                default: {
+                    if (data && (data.msg || data.detail)) {
+                        errorMsg(data.msg || data.detail);
+                    } else {
+                        errorMsg('Error en la solicitud al servidor');
+                    }
+                    break;
+                }
             }
         }
-        return Promise.reject(error)
-    }
-)
 
-/**
- * pedido
- * @param error
- * @returns {Promise<void>}
- */
-async function againRequest(refresh, error){
-    const store = useStore()
-    await refreshToken(refresh)
-    const config = error.response.config
-    config.headers['Authorization'] = 'Bearer ' + store.token
-    const res = await axios.request(config)
-    return res.data
+        return Promise.reject(error);
+    }
+);
+
+// Reintentar request con refreshToken
+async function againRequest(refresh, error) {
+    const store = useStore();
+    await refreshToken(refresh);
+    const config = error.response.config;
+    config.headers['Authorization'] = 'Bearer ' + store.token;
+    const res = await axios.request(config);
+    return res.data;
 }
 
-/**
- * refrescar token
- * @param refresh
- * @param config
- */
-export function refreshToken(refresh){
-    const store = useStore()
-    //  token
+// Refrescar token
+export function refreshToken(refresh) {
+    const store = useStore();
     return axios({
         url: '/auth/refresh',
         method: 'put',
-        headers: {
-            Authorization: `Bearer ${refresh}`
-        }
+        headers: { Authorization: `Bearer ${refresh}` }
     }).then(res => {
-        if (res.data.success){
-            //  token
-            store.tokenAction(res.data.data)
+        if (res.data.success) {
+            store.tokenAction(res.data.data);
         } else {
-            errorMsg(res.msg)
-            //  token
-            store.tokenAction(null)
+            errorMsg(res.data.msg || 'Error al refrescar token');
+            store.tokenAction(null);
         }
-    })
+    });
 }
 
-export default instance
+export default instance;

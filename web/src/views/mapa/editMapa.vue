@@ -1,148 +1,163 @@
 <template>
-  <el-dialog
-    v-model="visible"
-    :title="state.mapaObj.codmat ? 'Editar Asignación' : 'Nueva Asignación'"
-    width="500px"
-    @close="handleClose"
-  >
-    <el-form :model="state.mapaObj" label-width="120px">
-      <el-form-item label="Materia" required>
-        <el-select 
-          v-model="state.mapaObj.codmat" 
-          placeholder="Seleccione materia"
-          style="width: 100%"
-          :disabled="!!state.mapaObj.codmat"
-        >
-          <el-option
-            v-for="item in state.materiaOptions"
-            :key="item.codmat"
-            :label="`${item.codmat} - ${item.nombre}`"
-            :value="item.codmat"
+  <q-dialog v-model="visible" persistent>
+    <q-card style="min-width: 400px; max-width: 500px">
+      <q-card-section>
+        <div class="text-h6">
+          {{ isEdit ? 'Editar Asignación' : 'Nueva Asignación' }}
+        </div>
+      </q-card-section>
+
+      <q-card-section>
+        <q-form @submit.prevent="handleSubmit" ref="formRef" class="q-gutter-md">
+
+          <!-- Materia -->
+          <q-select
+            v-model="state.mapaObj.codmat"
+            :options="state.materiaOptions"
+            option-label="label"
+            option-value="value"
+            label="Materia"
+            :disable="!!state.mapaObj.codmat"
+            use-input
+            fill-input
+            input-debounce="300"
+            required
           />
-        </el-select>
-      </el-form-item>
 
-      <el-form-item label="Paralelo" required>
-        <el-select 
-          v-model="state.mapaObj.codpar" 
-          placeholder="Seleccione paralelo"
-          style="width: 100%"
-          :disabled="!!state.mapaObj.codpar"
-        >
-          <el-option
-            v-for="item in state.paraleloOptions"
-            :key="item.codp"
-            :label="item.nombre"
-            :value="item.codp"
+          <!-- Paralelo -->
+          <q-select
+            v-model="state.mapaObj.codpar"
+            :options="state.paraleloOptions"
+            option-label="label"
+            option-value="value"
+            label="Paralelo"
+            :disable="!!state.mapaObj.codpar"
+            required
           />
-        </el-select>
-      </el-form-item>
 
-      <el-form-item label="Gestión" required>
-        <el-input-number 
-          v-model="state.mapaObj.gestion" 
-          :min="2020" 
-          :max="2030"
-          :disabled="!!state.mapaObj.gestion"
-          style="width: 100%"
-        />
-      </el-form-item>
+          <!-- Gestión -->
+          <q-input
+            v-model.number="state.mapaObj.gestion"
+            type="number"
+            label="Gestión"
+            :disable="!!state.mapaObj.gestion"
+            :min="2020"
+            :max="2030"
+            required
+          />
 
-      <el-form-item label="Estado">
-        <el-select v-model="state.mapaObj.estado" style="width: 100%">
-          <el-option label="Activo" :value="1" />
-          <el-option label="Inactivo" :value="0" />
-        </el-select>
-      </el-form-item>
-    </el-form>
+          <!-- Estado -->
+          <q-select
+            v-model="state.mapaObj.estado"
+            :options="[
+              { label: 'Activo', value: 1 },
+              { label: 'Inactivo', value: 0 }
+            ]"
+            label="Estado"
+          />
+        </q-form>
+      </q-card-section>
 
-    <template #footer>
-      <el-button @click="handleClose">Cancelar</el-button>
-      <el-button type="primary" @click="handleSubmit">Guardar</el-button>
-    </template>
-  </el-dialog>
+      <q-card-actions align="right">
+        <q-btn flat label="Cancelar" color="secondary" @click="handleClose" />
+        <q-btn flat label="Guardar" color="primary" @click="handleSubmit" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
-import { editMapa } from "../../api/mapa/mapa";
-import { getMateriaList } from "../../api/materia/materia"; // Asume que existe
-import { getParaleloList } from "../../api/paralelo/paralelo"; // Asume que existe
-import { errorMsg, successMsg } from "../../utils/message";
-import { onMounted, reactive, computed } from "vue";
+import { ref, reactive, computed, watch } from 'vue'
+import { editMapa } from '../../api/mapa/mapa'
+import { getMateriaList } from '../../api/materia/materia'
+import { getParaleloList } from '../../api/paralelo/paralelo'
+import { errorMsg, successMsg } from '../../utils/message'
 
 const props = defineProps({
   dialogVisible: Boolean,
   mapaObj: Object,
   gestion: Number
-});
+})
+const emit = defineEmits(['update:dialogVisible', 'get-list'])
 
-const emit = defineEmits(['update:dialogVisible', 'getList']);
+const visible = computed({
+  get: () => props.dialogVisible,
+  set: (val) => emit('update:dialogVisible', val)
+})
+
+const isEdit = computed(() => !!props.mapaObj?.codmat)
 
 const state = reactive({
   mapaObj: {},
   materiaOptions: [],
   paraleloOptions: []
-});
+})
 
-const visible = computed({
-  get: () => props.dialogVisible,
-  set: (val) => emit('update:dialogVisible', val)
-});
+const formRef = ref(null)
 
-onMounted(() => {
-  getMateriaListFun();
-  getParaleloListFun();
-});
+// Cargar opciones de materias
+const getMateriaListFun = async () => {
+  const res = await getMateriaList({ blurry: '' })
+  if (res.success) {
+    state.materiaOptions = res.data.map(m => ({
+      label: `${m.codmat} - ${m.nombre}`,
+      value: m.codmat
+    }))
+  }
+}
 
-// Cargar opciones
-const getMateriaListFun = () => {
-  getMateriaList({ blurry: '' }).then(res => {
-    if (res.success) {
-      state.materiaOptions = res.data;
-    }
-  });
-};
+// Cargar opciones de paralelos
+const getParaleloListFun = async () => {
+  const res = await getParaleloList({ blurry: '' })
+  if (res.success) {
+    state.paraleloOptions = res.data.map(p => ({
+      label: p.nombre,
+      value: p.codp
+    }))
+  }
+}
 
-const getParaleloListFun = () => {
-  getParaleloList({ blurry: '' }).then(res => {
-    if (res.success) {
-      state.paraleloOptions = res.data;
-    }
-  });
-};
-
-// Actualizar objeto
+// Inicializar objeto
 const updateObj = () => {
-  state.mapaObj = props.mapaObj.codmat 
-    ? { ...props.mapaObj } 
-    : { codmat: null, codpar: null, gestion: props.gestion, estado: 1 };
-};
+  state.mapaObj = props.mapaObj?.codmat
+    ? { ...props.mapaObj }
+    : { codmat: null, codpar: null, gestion: props.gestion, estado: 1 }
+}
 
-import { watch } from 'vue';
-watch(() => props.dialogVisible, (val) => {
-  if (val) updateObj();
-});
+watch(() => props.dialogVisible, val => {
+  if (val) {
+    updateObj()
+    getMateriaListFun()
+    getParaleloListFun()
+  }
+})
 
 // Guardar
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!state.mapaObj.codmat || !state.mapaObj.codpar || !state.mapaObj.gestion) {
-    errorMsg('Todos los campos son obligatorios');
-    return;
+    errorMsg('Todos los campos son obligatorios')
+    return
   }
 
-  editMapa(state.mapaObj).then(res => {
-    if (res.success) {
-      successMsg(res.data);
-      handleClose();
-      emit('getList');
-    } else {
-      errorMsg(res.msg);
-    }
-  });
-};
+  const res = await editMapa(state.mapaObj)
+  if (res.success) {
+    successMsg(res.data)
+    handleClose()
+    emit('get-list')
+  } else {
+    errorMsg(res.msg)
+  }
+}
 
-// Cerrar
+// Cerrar diálogo
 const handleClose = () => {
-  visible.value = false;
-};
+  visible.value = false
+}
 </script>
+
+<style scoped>
+.q-gutter-md {
+  display: flex;
+  flex-direction: column;
+}
+</style>
