@@ -41,12 +41,14 @@
         @click="getDictaListFun"
       />
 
+      <!-- Botón nueva asignación -->
       <q-btn
         color="positive"
         icon="add"
         label="Nueva Asignación"
         @click="addDicta"
         v-if="hasPer(['ROLE_ADMIN'])"
+        class="q-ml-sm"
       />
     </div>
 
@@ -62,6 +64,7 @@
       dense
       virtual-scroll
     >
+      <!-- Periodo -->
       <template v-slot:body-cell-codp="props">
         <q-td :props="props">
           <q-chip
@@ -75,6 +78,7 @@
         </q-td>
       </template>
 
+      <!-- Tipo de docente -->
       <template v-slot:body-cell-tipoDocente="props">
         <q-td :props="props">
           <q-chip
@@ -88,19 +92,21 @@
         </q-td>
       </template>
 
+      <!-- Email docente (botón mailto) -->
       <template v-slot:body-cell-emailDocente="props">
         <q-td :props="props">
           <q-btn
             :label="props.row.emailDocente"
             color="primary"
             flat
-            unelevated
-            round
-            href="mailto:{{ props.row.emailDocente }}"
+            dense
+            :href="'mailto:' + props.row.emailDocente"
+            target="_blank"
           />
         </q-td>
       </template>
 
+      <!-- Acciones -->
       <template v-slot:body-cell-actions="props">
         <q-td :props="props">
           <q-btn
@@ -111,6 +117,7 @@
             label="Editar"
             @click="editDicta(props.row)"
             v-if="hasPer(['ROLE_ADMIN', 'ROLE_DOCENTE'])"
+            class="q-mr-sm"
           />
           <q-btn
             color="negative"
@@ -126,12 +133,14 @@
     </q-table>
 
     <!-- Paginación -->
-    <q-pagination
-      v-model="state.current"
-      :max="Math.ceil(state.total / state.size)"
-      color="primary"
-      @update:model-value="getDictaListFun"
-    />
+    <div class="q-mt-md flex justify-center">
+      <q-pagination
+        v-model="state.current"
+        :max="Math.ceil(state.total / state.size) || 1"
+        color="primary"
+        @update:model-value="getDictaListFun"
+      />
+    </div>
 
     <!-- Dialog -->
     <EditDicta
@@ -193,7 +202,7 @@ const getDictaListFun = (obj) => {
     codmat: state.codmat,
     codn: state.codn,
     size: state.size,
-    currentPage: state.current
+    currentPage: state.current   // ojo: revisa que tu backend espere currentPage o page
   }
 
   queryDictaTable(params)
@@ -241,9 +250,9 @@ const delDicta = (row) => {
 
 const getDocenteTagType = (tipo) => {
   const types = {
-    'Titular': 'green',
-    'Invitado': 'orange',
-    'Auxiliar': 'blue'
+    Titular: 'green',
+    Invitado: 'orange',
+    Auxiliar: 'blue'
   }
   return types[tipo] || 'grey'
 }

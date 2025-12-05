@@ -17,12 +17,13 @@
           />
 
           <div class="q-mt-md">
-            <q-radio-group
-              v-model="state.form.estado"
-              inline
-              :options="estadoOptions"
-              :rules="[val => val !== null || 'Por favor seleccione estado']"
-            />
+            <q-option-group
+  v-model="state.form.estado"
+  type="radio"
+  inline
+  :options="estadoOptions"
+  :rules="[val => val !== null || 'Por favor seleccione estado']"
+/>
           </div>
         </q-form>
       </q-card-section>

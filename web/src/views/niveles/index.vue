@@ -11,13 +11,18 @@
         class="col"
         @keyup.enter="getNivelesListFun"
       />
-      <q-btn dense color="primary" label="Consulta" @click="getNivelesListFun" />
+      <q-btn
+        dense
+        color="primary"
+        label="Consulta"
+        @click="getNivelesListFun"
+      />
       <q-btn
         dense
         color="secondary"
         label="Nuevo"
-        v-if="hasPer('niveles:add')"
         class="q-ml-md"
+        v-if="hasPer(['niveles:add'])"
         @click="editNivelesFun"
       />
     </div>
@@ -32,39 +37,45 @@
       row-height="28"
       class="shadow-0"
     >
+      <!-- Estado -->
       <template v-slot:body-cell-estado="props">
-        <q-chip
-          dense
-          :color="props.row.estado === 1 ? 'green' : 'red'"
-          text-color="white"
-        >
-          {{ props.row.estado === 1 ? 'Activo' : 'Inactivo' }}
-        </q-chip>
+        <q-td :props="props">
+          <q-chip
+            dense
+            :color="props.row.estado === 1 ? 'green' : 'red'"
+            text-color="white"
+          >
+            {{ props.row.estado === 1 ? 'Activo' : 'Inactivo' }}
+          </q-chip>
+        </q-td>
       </template>
 
+      <!-- Opciones -->
       <template v-slot:body-cell-option="props">
-        <q-btn
-          dense
-          color="primary"
-          size="sm"
-          label="Editar"
-          v-if="hasPer('niveles:edit')"
-          @click="editNivelesFun({ ...props.row })"
-        />
-        <q-btn
-          dense
-          color="negative"
-          size="sm"
-          label="Borrar"
-          class="q-ml-sm"
-          v-if="hasPer('niveles:del')"
-          @click="delNivelesFun(props.row.codn, props.row.nombre)"
-        />
+        <q-td :props="props">
+          <q-btn
+            dense
+            color="primary"
+            size="sm"
+            label="Editar"
+            class="q-mr-sm"
+            v-if="hasPer(['niveles:edit'])"
+            @click="editNivelesFun({ ...props.row })"
+          />
+          <q-btn
+            dense
+            color="negative"
+            size="sm"
+            label="Borrar"
+            v-if="hasPer(['niveles:del'])"
+            @click="delNivelesFun(props.row.codn, props.row.nombre)"
+          />
+        </q-td>
       </template>
     </q-table>
 
     <!-- Dialog de edición -->
-    <edit-niveles
+    <EditNiveles
       v-model:dialog-visible="dialogVisible"
       :niveles-obj="state.nivelesObj"
       @get-list="getNivelesListFun"
@@ -89,11 +100,39 @@ const state = reactive({
 })
 
 const columns = [
-  { name: 'index', label: 'Numero de Serie', field: (row, index) => index + 1, align: 'center', style: 'width: 60px' },
-  { name: 'codn', label: 'Código', field: 'codn', align: 'center', style: 'width: 100px' },
-  { name: 'nombre', label: 'Nombre del Nivel', field: 'nombre' },
-  { name: 'estado', label: 'Estado', field: 'estado', align: 'center', style: 'width: 100px' },
-  { name: 'option', label: 'Funcionar', field: 'option', align: 'center', style: 'width: 200px' }
+  {
+    name: 'index',
+    label: 'Número de Serie',
+    field: (row, index) => index + 1,
+    align: 'center',
+    style: 'width: 60px'
+  },
+  {
+    name: 'codn',
+    label: 'Código',
+    field: 'codn',
+    align: 'center',
+    style: 'width: 100px'
+  },
+  {
+    name: 'nombre',
+    label: 'Nombre del Nivel',
+    field: 'nombre'
+  },
+  {
+    name: 'estado',
+    label: 'Estado',
+    field: 'estado',
+    align: 'center',
+    style: 'width: 100px'
+  },
+  {
+    name: 'option',
+    label: 'Funcionar',
+    field: 'option',
+    align: 'center',
+    style: 'width: 200px'
+  }
 ]
 
 onMounted(() => {
@@ -104,15 +143,15 @@ onMounted(() => {
 const getNivelesListFun = () => {
   queryNivelesTable({ blurry: state.blurry }).then(res => {
     if (res.success) {
-      state.tableData = res.data
+      state.tableData = res.data.records || []
     } else {
       errorMsg(res.msg)
     }
   })
 }
 
-// Editar Nivel
-const editNivelesFun = (row) => {
+// Abrir diálogo para nuevo / editar
+const editNivelesFun = (row = {}) => {
   dialogVisible.value = true
   state.nivelesObj = row.codn ? row : {}
 }
@@ -125,18 +164,20 @@ const delNivelesFun = (id, name) => {
     ok: { label: 'Seguro', color: 'primary' },
     cancel: { label: 'Cancelar', color: 'grey-5' },
     color: 'warning'
-  }).onOk(() => {
-    delNiveles(id).then(res => {
-      if (res.success) {
-        successMsg(res.data)
-        getNivelesListFun()
-      } else {
-        errorMsg(res.msg)
-      }
-    })
-  }).onCancel(() => {
-    infoMsg('Operacion Cancelada')
   })
+    .onOk(() => {
+      delNiveles(id).then(res => {
+        if (res.success) {
+          successMsg(res.data)
+          getNivelesListFun()
+        } else {
+          errorMsg(res.msg)
+        }
+      })
+    })
+    .onCancel(() => {
+      infoMsg('Operación cancelada')
+    })
 }
 </script>
 

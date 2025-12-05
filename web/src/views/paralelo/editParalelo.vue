@@ -25,8 +25,15 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Cancelar" color="primary" v-close-popup @click="closeFun"></q-btn>
-        <q-btn flat label="Guardar" color="primary" @click="submitFun"></q-btn>
+        <!-- Botón Cancelar con icono -->
+        <q-btn flat round color="grey" icon="close" v-close-popup @click="closeFun">
+          <q-tooltip>Cancelar</q-tooltip>
+        </q-btn>
+
+        <!-- Botón Guardar con icono -->
+        <q-btn flat round color="primary" icon="save" @click="submitFun">
+          <q-tooltip>Guardar</q-tooltip>
+        </q-btn>
       </q-card-actions>
     </q-card>
   </q-dialog>

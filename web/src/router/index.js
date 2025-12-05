@@ -10,6 +10,7 @@ const whiteList = ['/login', '/401', '/404'];
 
 // =====================================================
 // MAPA DE CORRECCIÓN DE RUTAS
+// (path que viene del backend → path real del front)
 // =====================================================
 const ROUTE_CORRECTIONS = {
   // Configuración
@@ -22,7 +23,6 @@ const ROUTE_CORRECTIONS = {
   '/clientes': '/configuracion/clientes',
   
   // Gestión Académica
-  '/menu': '/gestion-academica/general',
   '/general': '/gestion-academica/general',
   '/materia': '/gestion-academica/materia',
   '/progra': '/gestion-academica/progra',
@@ -35,9 +35,10 @@ const ROUTE_CORRECTIONS = {
   '/user': '/usuarios/sistema',
   
   // Sistema
+  '/menu': '/sistema/menu',        // 👈 AQUÍ ESTÁ LA CLAVE PARA GMENU
+  '/menu-config': '/sistema/menu', // por si el backend manda este
   '/role': '/sistema/role',
   '/log': '/sistema/log',
-  '/menu-config': '/sistema/menu',
   
   // Módulo 1
   '/modulo1': '/modulo1/pedidos',
@@ -50,12 +51,14 @@ const ROUTE_CORRECTIONS = {
 function normalizeRoute(path) {
   if (!path) return path;
   
-  // Si la ruta ya está en formato correcto, devolverla
-  if (path.includes('/configuracion/') || 
-      path.includes('/gestion-academica/') || 
-      path.includes('/usuarios/') ||
-      path.includes('/sistema/') ||
-      path.includes('/modulo1/')) {
+  // Si la ruta ya está en formato "bueno", devolverla
+  if (
+    path.includes('/configuracion/') || 
+    path.includes('/gestion-academica/') || 
+    path.includes('/usuarios/') ||
+    path.includes('/sistema/') ||
+    path.includes('/modulo1/')
+  ) {
     return path;
   }
   
@@ -78,23 +81,21 @@ router.beforeEach((to, from, next) => {
   // ─────────────────────────────────────────────────
   // CASO 1: Usuario autenticado
   // ─────────────────────────────────────────────────
-   if (store.token) {
+  if (store.token) {
     
-    // Redirigir de login a home si ya está autenticado
+    // Si ya está logueado y va a /login → redirigir a /home
     if (to.path === '/login') {
       next({ path: '/home' });
       return;
     }
 
-    // ─────────────────────────────────────────────────
-    // CARGAR MENÚS SI NO ESTÁN CARGADOS
-    // ─────────────────────────────────────────────────
+    // Cargar menús solo una vez
     if (!store.isLoadMenu) {
       loadMenus(next, to);
       return;
     }
 
-    // Permitir navegación
+    // Menús ya cargados → seguir normal
     next();
     return;
   }
@@ -120,7 +121,7 @@ export function loadMenus(next, to) {
       console.log("📋 Menús del backend:", res.data);
       
       if (res.success && res.data && res.data.length > 0) {
-        // Normalizar rutas antes de guardar
+        // Normalizar rutas antes de guardar en el store
         const normalizedMenus = normalizeMenuPaths(res.data);
         
         store.routerAction(normalizedMenus);
@@ -129,7 +130,7 @@ export function loadMenus(next, to) {
         // Agregar rutas dinámicas
         addRoute();
         
-        // Si está intentando ir a home, permitirlo
+        // Redirigir correctamente
         if (to.path === '/home' || to.path === '/') {
           next({ path: '/home' });
         } else {
@@ -148,7 +149,7 @@ export function loadMenus(next, to) {
 }
 
 // =====================================================
-// NORMALIZAR PATHS DE MENÚS
+// NORMALIZAR PATHS DE MENÚS (estructura completa)
 // =====================================================
 function normalizeMenuPaths(menus) {
   return menus.map(menu => {
@@ -187,7 +188,6 @@ export function addRoute() {
 
   console.log('➕ Agregando rutas dinámicas:', routers);
 
-  // Función recursiva para procesar menús
   function processMenus(menuList) {
     menuList.forEach(item => {
       if (!item.path) {
@@ -195,7 +195,6 @@ export function addRoute() {
         return;
       }
 
-      // Si tiene componente, registrar la ruta
       if (item.component) {
         try {
           let componentPath = item.component;
@@ -225,14 +224,12 @@ export function addRoute() {
         }
       }
 
-      // Procesar hijos recursivamente
       if (item.children && item.children.length > 0) {
         processMenus(item.children);
       }
     });
   }
 
-  // Procesar todos los menús
   processMenus(routers);
 
   console.log('✅ Rutas dinámicas agregadas');
@@ -240,7 +237,4 @@ export function addRoute() {
   console.log('📋 Rutas registradas:', router.getRoutes().map(r => r.path));
 }
 
-// =====================================================
-// EXPORT ROUTER
-// =====================================================
 export default router;

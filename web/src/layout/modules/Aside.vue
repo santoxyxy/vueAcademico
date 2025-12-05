@@ -1,31 +1,28 @@
 <template>
-  <el-menu :default-active="defaultActive" :unique-opened="true" router :collapse="isCollapse"
-           background-color="#545c64" text-color="#fff">
+  <el-menu
+    :default-active="defaultActive"
+    :unique-opened="true"
+    router
+    :collapse="isCollapse"
+    background-color="#545c64"
+    text-color="#fff"
+  >
     <div class="logo" @click="changeCollapse">
-      <el-image :src="require('../../assets/image/ems.png')" style="width: 40px;"></el-image>
-<!--      <span v-if="!isCollapse">EMS-ADMIN</span>-->
+      <el-image :src="require('../../assets/image/ems.png')" style="width: 40px;" />
     </div>
-    <!---Colocar la página de inicio primero de forma predeterminada-->
-    <el-menu-item route="/home" index="delantera" @click="openTab('delantera', '/home')"><i class="iconfont icon-home"></i>paginadelantera</el-menu-item>
-    <menu-tree :menu-data="menuList"></menu-tree>
-<!--    <el-sub-menu v-for="(menu, menuIndex) in menuList" :key="menuIndex" :index="menu.name">-->
-<!--      <template #title>-->
-<!--        <i :class="menu.icon"></i>-->
-<!--        <span>{{menu.name}}</span>-->
-<!--      </template>-->
-<!--      <el-sub-menu v-if="menu.children.children && menu.children.children.length > 0" index="">-->
 
-<!--      </el-sub-menu>-->
-<!--      <el-menu-item-->
-<!--          v-else-->
-<!--          v-for="(item, itemIndex) in menu.children"-->
-<!--          :key="itemIndex"-->
-<!--          :index="item.name"-->
-<!--          :route="item.path" @click="openTab(item.name, item.path)">-->
-<!--        <i :class="item.icon"></i>-->
-<!--        {{item.name}}-->
-<!--      </el-menu-item>-->
-<!--    </el-sub-menu>-->
+    <!-- Página de inicio fija -->
+    <el-menu-item
+      route="/home"
+      index="/home"
+      @click="openTab('Inicio', '/home')"
+    >
+      <i class="iconfont icon-home"></i>
+      <span>Inicio</span>
+    </el-menu-item>
+
+    <!-- Menús dinámicos del backend -->
+    <menu-tree :menu-data="menuList" />
   </el-menu>
 </template>
 
@@ -34,7 +31,7 @@ import { useStore } from "../../store";
 import { getMenuTree, getPermission } from "../../api/menu/sysMenu";
 import { errorMsg } from "../../utils/message";
 import { computed, onMounted, ref } from "vue";
-import MenuTree from "../../components/MenuTree";
+import MenuTree from "../../components/MenuTree.vue";
 
 const store = useStore();
 const emit = defineEmits(["update:width"]);
@@ -42,50 +39,75 @@ const emit = defineEmits(["update:width"]);
 const menuList = ref([]);
 const isCollapse = ref(false);
 
-// Pestaña activa proveniente del store
+// índice activo del menú: usamos el PATH
 const defaultActive = computed(() => store.activeIndex);
 
-//
-// =============================
-//   FUNCIÓN CLAVE: NORMALIZAR PATHS
-// =============================
-// Acomoda rutas mal enviadas por el backend
-//
+// Mapa de correcciones (igual que en router/index.js)
+const ROUTE_CORRECTIONS = {
+  // Configuración
+  '/items': '/configuracion/items',
+  '/paralelo': '/configuracion/paralelo',
+  '/niveles': '/configuracion/niveles',
+  '/modalidad': '/configuracion/modalidad',
+  '/dmodalidad': '/configuracion/dmodalidad',
+  '/itemat': '/configuracion/itemat',
+  '/clientes': '/configuracion/clientes',
+
+  // Gestión Académica
+  '/general': '/gestion-academica/general',
+  '/materia': '/gestion-academica/materia',
+  '/progra': '/gestion-academica/progra',
+  '/dicta': '/gestion-academica/dicta',
+  '/mapa': '/gestion-academica/mapa',
+  '/notas': '/gestion-academica/notas',
+
+  // Usuarios
+  '/usuario': '/usuarios/gestion',
+  '/user': '/usuarios/sistema',
+
+  // Sistema
+  '/menu': '/sistema/menu',          // 👈 GMenu ahora va a Gestión de Menús
+  '/menu-config': '/sistema/menu',
+  '/role': '/sistema/role',
+  '/log': '/sistema/log',
+
+  // Módulo 1
+  '/modulo1': '/modulo1/pedidos',
+  '/dclientes': '/modulo1/dclientes'
+};
+
+const normalizePath = (path) => {
+  if (!path) return path;
+  if (ROUTE_CORRECTIONS[path]) {
+    return ROUTE_CORRECTIONS[path];
+  }
+  return path;
+};
+
 const fixMenuPaths = (menus) => {
   return menus.map((m) => {
-    // Corrección de rutas según router.js
-    if (m.path === "/items") m.path = "/configuracion/items";
-    if (m.path === "/paralelo") m.path = "/configuracion/paralelo";
-    if (m.path === "/niveles") m.path = "/configuracion/niveles";
-    if (m.path === "/modalidad") m.path = "/configuracion/modalidad";
-    if (m.path === "/dmodalidad") m.path = "/configuracion/dmodalidad";
+    if (m.path) {
+      const original = m.path;
+      m.path = normalizePath(m.path);
+      if (original !== m.path) {
+        console.log(`🔄 Ruta de menú corregida: ${original} → ${m.path}`);
+      }
+    }
 
-    // Cualquier menú general
-    if (m.path === "/menu") m.path = "/gestion-academica/general";
-
-    // Corregir los submenús recursivamente
     if (m.children && m.children.length > 0) {
       m.children = fixMenuPaths(m.children);
     }
-
     return m;
   });
 };
 
-//
-// =============================
-//      CARGA DEL MENÚ DINÁMICO
-// =============================
-//
 onMounted(() => {
   getMenuTree().then((res) => {
     if (res.success) {
-      // Aplicar la corrección de rutas dinámicas
       menuList.value = fixMenuPaths(res.data);
     }
   });
 
-  // Permisos del usuario
   getPermission().then((res) => {
     if (res.success) {
       store.permissionAction(res.data);
@@ -95,22 +117,12 @@ onMounted(() => {
   });
 });
 
-//
-// =============================
-//        CONTROL DE TABS
-// =============================
-//
-
 const openTab = (name, path) => {
   store.addTabAction({ name, path });
-  store.activeIndex = name;
+  // usar PATH como índice activo (coincide con el index del menú)
+  store.activeIndexAction(path || name);
 };
 
-//
-// =============================
-//        COLAPSAR MENÚ
-// =============================
-//
 const changeCollapse = () => {
   isCollapse.value = !isCollapse.value;
   emit("update:width", isCollapse.value ? "64px" : "230px");
@@ -118,16 +130,16 @@ const changeCollapse = () => {
 </script>
 
 <style scoped>
-  .el-menu{
-    height: 100%;
-  }
-  .logo{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 20px;
-    height: 60px;
-    cursor: pointer;
-  }
+.el-menu {
+  height: 100%;
+}
+.logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 20px;
+  height: 60px;
+  cursor: pointer;
+}
 </style>

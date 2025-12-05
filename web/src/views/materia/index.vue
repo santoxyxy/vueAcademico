@@ -2,6 +2,7 @@
   <q-layout view="hHh lpR fFf">
     <q-page-container>
       <div class="q-pa-md">
+
         <!-- Barra de búsqueda -->
         <div class="searchDiv">
           <q-input 
@@ -11,10 +12,12 @@
             clearable
             @keyup.enter="getMateriasListFun"
           />
+
           <q-btn color="primary" @click="getMateriasListFun" dense>
             <q-icon name="search" />
             Consultar
           </q-btn>
+
           <q-btn 
             color="positive" 
             @click="openAddDialog"
@@ -55,6 +58,7 @@
           binary-state-sort
           @request="onRequest"
         >
+
           <!-- Estado -->
           <template v-slot:body-cell-estado="props">
             <q-td :props="props">
@@ -68,6 +72,8 @@
           <!-- Acciones -->
           <template v-slot:body-cell-actions="props">
             <q-td :props="props">
+
+              <!-- Botón Editar -->
               <q-btn 
                 flat 
                 dense 
@@ -78,6 +84,8 @@
               >
                 <q-tooltip>Editar</q-tooltip>
               </q-btn>
+
+              <!-- Botón Eliminar -->
               <q-btn 
                 flat 
                 dense 
@@ -88,8 +96,10 @@
               >
                 <q-tooltip>Eliminar</q-tooltip>
               </q-btn>
+
             </q-td>
           </template>
+
         </q-table>
 
         <!-- Paginación -->
@@ -101,6 +111,7 @@
           color="primary"
           class="q-mt-md"
         />
+
       </div>
 
       <!-- Modal de edición -->
@@ -112,7 +123,6 @@
     </q-page-container>
   </q-layout>
 </template>
-
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { queryMateriaTable, delMateria } from '@/api/materia/materia';
@@ -121,23 +131,29 @@ import { hasPer } from '@/utils/common';
 import EditMateria from './editMateria.vue';
 import { Dialog } from 'quasar';
 
-// Estado reactivo
 const state = reactive({
   blurry: '',
   tableData: [],
   current: 1,
   size: 10,
   total: 0,
-  estadoFiltro: 1 // 1=Activos, 0=Inactivos, null=Todos
+  estadoFiltro: 1
 });
 
-// Columnas
+// 🔥 COLUMNA ACTIONS CORREGIDA
 const columns = [
   { name: 'codmat', required: true, label: 'Código', align: 'left', field: 'codmat', sortable: true },
   { name: 'nombre', required: true, label: 'Nombre', align: 'left', field: 'nombre', sortable: true },
   { name: 'nombreNivel', label: 'Nivel', align: 'left', field: 'nombreNivel', sortable: true },
   { name: 'estado', label: 'Estado', align: 'center', field: 'estado' },
-  { name: 'actions', label: 'Acciones', align: 'center' }
+
+  {
+    name: 'actions',
+    label: 'Acciones',
+    align: 'center',
+    field: 'codmat',   // NECESARIO PARA MOSTRAR LOS BOTONES
+    sortable: false
+  }
 ];
 
 const loading = ref(false);
@@ -151,9 +167,10 @@ const pagination = ref({
 const dialogVisible = ref(false);
 const currentMateria = ref(null);
 
-// Obtener lista de materias
+// Obtener datos
 const getMateriasListFun = () => {
   loading.value = true;
+
   const params = {
     blurry: state.blurry,
     size: state.size,
@@ -164,6 +181,7 @@ const getMateriasListFun = () => {
   queryMateriaTable(params)
     .then((res) => {
       loading.value = false;
+
       if (res.success) {
         state.tableData = res.data.records;
         state.total = res.data.total;
@@ -176,54 +194,53 @@ const getMateriasListFun = () => {
     });
 };
 
-// Manejo de paginación
 const onRequest = (props) => {
   const { page, rowsPerPage, sortBy, descending } = props.pagination;
+
   pagination.value.sortBy = sortBy || '';
   pagination.value.descending = descending;
   pagination.value.page = page;
   pagination.value.rowsPerPage = rowsPerPage;
   state.size = rowsPerPage;
+
   getMateriasListFun();
 };
 
-// Abrir diálogo para nueva materia
+// Abrir modal nueva materia
 const openAddDialog = () => {
   currentMateria.value = null;
   dialogVisible.value = true;
 };
 
-// Editar materia
 const editMateria = (row) => {
   currentMateria.value = { ...row };
   dialogVisible.value = true;
 };
 
-// Eliminar materia con Quasar Dialog
+// Eliminar
 const deleteMateria = (row) => {
   Dialog.create({
-  title: 'Confirmar eliminación',
-  message: `¿Está seguro de eliminar la materia "${row.nombre}"?`,
-  persistent: true,
-  ok: { label: 'Sí, eliminar', color: 'negative' },
-  cancel: { label: 'Cancelar', color: 'grey-5' }
-}).onOk(() => {
-  delMateria(row.codmat).then((res) => {
-    if (res.success) {
-      successMsg('Materia eliminada exitosamente');
-      getMateriasListFun();
-    } else {
-      errorMsg(res.msg);
-    }
+    title: 'Confirmar eliminación',
+    message: `¿Está seguro de eliminar la materia "${row.nombre}"?`,
+    persistent: true,
+    ok: { label: 'Sí, eliminar', color: 'negative' },
+    cancel: { label: 'Cancelar', color: 'grey-5' }
+  }).onOk(() => {
+    delMateria(row.codmat).then((res) => {
+      if (res.success) {
+        successMsg('Materia eliminada exitosamente');
+        getMateriasListFun();
+      } else {
+        errorMsg(res.msg);
+      }
+    });
   });
-});
 };
 
 onMounted(() => {
   getMateriasListFun();
 });
 </script>
-
 <style scoped>
 .searchDiv {
   display: flex;
